@@ -35,4 +35,9 @@ next-env.d.ts
 
 # IDE
 .idea
-.vscode 
+.vscode
+
+.turbo
+dist/
+build/
+coverage/
