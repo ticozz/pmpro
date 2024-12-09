@@ -1,0 +1,4 @@
+<svg width="2000" height="1000" viewBox="0 0 2000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M100,1000 v-400 h100 v200 h100 v-300 h150 v-200 h100 v300 h200 v-500 h150 v200 h100 v-400 h200 v300 h150 v-200 h100 v400 h150 v-300 h100 v500 Z" fill="#4B5563"/>
+  <path d="M400,1000 v-300 h80 v100 h80 v-200 h120 v-150 h80 v200 h160 v-400 h120 v150 h80 v-300 h160 v200 h120 v-150 h80 v300 h120 v-200 h80 v400 Z" fill="#6B7280" fill-opacity="0.6"/>
+</svg> 

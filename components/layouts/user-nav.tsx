@@ -47,7 +47,13 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10 border border-gray-200">
-            <AvatarImage src="/ui/avatar/01.png" alt={user?.firstName || 'User'} />
+            <AvatarImage 
+              src="/avatars/default.svg" 
+              alt={user?.firstName || 'User'} 
+              onError={(e) => {
+                e.currentTarget.src = '/avatars/default.svg';
+              }}
+            />
             <AvatarFallback className="bg-blue-50 text-blue-600 font-medium">
               {getInitials()}
             </AvatarFallback>

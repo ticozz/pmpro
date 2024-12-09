@@ -390,14 +390,11 @@ enum UnitStatus {
   VACANT
   OCCUPIED
   MAINTENANCE
-  RESERVED
 }
 
 enum TenantStatus {
   ACTIVE
   INACTIVE
-  EVICTED
-  FORMER
 }
 
 enum LeaseStatus {
@@ -454,8 +451,8 @@ enum PaymentType {
 
 enum PaymentStatus {
   PENDING
-  PAID
-  OVERDUE
+  COMPLETED
+  FAILED
   CANCELLED
 }
 

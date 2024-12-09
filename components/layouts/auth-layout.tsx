@@ -1,16 +1,16 @@
 import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import { BuildingsPattern } from '@/components/ui/buildings-pattern';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
-  title: string;
+  title: React.ReactNode;
   description?: string;
 }
 
 export function AuthLayout({ children, title, description }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-gradient-to-b from-blue-50 via-white to-blue-50">
       {/* Left side - Form */}
       <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm">
@@ -18,7 +18,9 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
             <Link href="/" className="text-2xl font-bold text-blue-600">
               PropertyPro
             </Link>
-            <h2 className="mt-6 text-3xl font-bold text-gray-900">{title}</h2>
+            <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
+              {title}
+            </h2>
             {description && (
               <p className="mt-2 text-sm text-gray-600">{description}</p>
             )}
@@ -27,21 +29,14 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
         </div>
       </div>
 
-      {/* Right side - Image */}
-      <div className="hidden lg:block relative w-0 flex-1">
-        <Image
-          className="absolute inset-0 h-full w-full object-cover"
-          src="/images/auth-background.jpg"
-          alt="Property Management"
-          width={1000}
-          height={1000}
-        />
-        <div className="absolute inset-0 bg-blue-600 mix-blend-multiply" />
+      {/* Right side */}
+      <div className="hidden lg:block relative w-0 flex-1 bg-gradient-to-br from-blue-600 to-blue-500">
+        <BuildingsPattern />
         <div className="absolute inset-0 flex flex-col justify-center p-12 text-white">
           <h2 className="text-4xl font-bold mb-4">
             Manage your properties with ease
           </h2>
-          <p className="text-lg">
+          <p className="text-lg text-blue-100">
             Streamline your property management workflow with our comprehensive solution
           </p>
         </div>

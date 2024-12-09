@@ -28,6 +28,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { designSystem } from '@/lib/design-system';
+import { cn } from '@/lib/utils';
+import { Plus } from "lucide-react";
 
 const unitSchema = z.object({
   unitNumber: z.string().min(1, "Unit number is required"),
@@ -83,102 +86,166 @@ export function UnitForm({ propertyId, onSuccess }: UnitFormProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>Add Unit</Button>
+        <Button 
+          className={cn(
+            "gap-2",
+            designSystem.colors.primary.gradient,
+            "text-white hover:opacity-90"
+          )}
+        >
+          <Plus className="h-4 w-4" />
+          Add Unit
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add New Unit</DialogTitle>
+          <DialogTitle>
+            Add New Unit
+          </DialogTitle>
           <DialogDescription>
             Add a new unit to this property. Fill in all the required information below.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="unitNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Unit Number</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <Selectui onValueChange={field.onChange} defaultValue={field.value}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="unitNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit Number</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select unit type" />
-                      </SelectTrigger>
+                      <Input {...field} />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="STUDIO">Studio</SelectItem>
-                      <SelectItem value="1BR">1 Bedroom</SelectItem>
-                      <SelectItem value="2BR">2 Bedroom</SelectItem>
-                      <SelectItem value="3BR">3 Bedroom</SelectItem>
-                    </SelectContent>
-                  </Selectui>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="size"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Size (sq ft)</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="rent"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Monthly Rent</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Selectui onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type</FormLabel>
+                    <Selectui onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className={cn(
+                          "border-input bg-background",
+                          designSystem.effects.blur
+                        )}>
+                          <SelectValue placeholder="Select unit type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className={cn(
+                        designSystem.dropdown.content.base,
+                        "min-w-[8rem]"
+                      )}>
+                        <div className={designSystem.dropdown.content.inner}>
+                          {[
+                            { value: "STUDIO", label: "Studio" },
+                            { value: "1BR", label: "1 Bedroom" },
+                            { value: "2BR", label: "2 Bedroom" },
+                            { value: "3BR", label: "3 Bedroom" },
+                          ].map((option) => (
+                            <SelectItem
+                              key={option.value}
+                              value={option.value}
+                              className={cn(
+                                designSystem.dropdown.content.item.base,
+                                designSystem.dropdown.content.item.hover
+                              )}
+                            >
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </div>
+                      </SelectContent>
+                    </Selectui>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="size"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Size (sq ft)</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
+                      <Input type="number" {...field} />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="VACANT">Vacant</SelectItem>
-                      <SelectItem value="OCCUPIED">Occupied</SelectItem>
-                      <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-                    </SelectContent>
-                  </Selectui>
-                  <FormMessage />
-                </FormItem>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="rent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Monthly Rent</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Selectui onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className={cn(
+                          "border-input bg-background",
+                          designSystem.effects.blur
+                        )}>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className={cn(
+                        designSystem.dropdown.content.base,
+                        "min-w-[8rem]"
+                      )}>
+                        <div className={designSystem.dropdown.content.inner}>
+                          {[
+                            { value: "VACANT", label: "Vacant" },
+                            { value: "OCCUPIED", label: "Occupied" },
+                            { value: "MAINTENANCE", label: "Maintenance" },
+                          ].map((option) => (
+                            <SelectItem
+                              key={option.value}
+                              value={option.value}
+                              className={cn(
+                                designSystem.dropdown.content.item.base,
+                                designSystem.dropdown.content.item.hover
+                              )}
+                            >
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </div>
+                      </SelectContent>
+                    </Selectui>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <Button 
+              type="submit"
+              className={cn(
+                "w-full",
+                designSystem.colors.primary.gradient,
+                "text-white hover:opacity-90"
               )}
-            />
-            <Button type="submit">Create Unit</Button>
+            >
+              Create Unit
+            </Button>
           </form>
         </Form>
       </DialogContent>
