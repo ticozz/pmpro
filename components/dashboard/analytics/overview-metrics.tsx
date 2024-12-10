@@ -59,19 +59,19 @@ export function OverviewMetrics() {
   const stats: OverviewMetric[] = [
     {
       label: "Total Revenue",
-      value: metrics?.revenue || 0,
+      value: metrics?.revenue ?? 0,
       trend: 12.5,
       icon: <DollarSign className="w-4 h-4" />
     },
     {
       label: "Occupancy Rate",
-      value: metrics?.occupancyRate || 0,
+      value: metrics?.occupancyRate ?? 0,
       trend: 4.2,
       icon: <Home className="w-4 h-4" />
     },
     {
       label: "Active Tenants",
-      value: metrics?.activeTenants || 0,
+      value: metrics?.activeTenants ?? 0,
       trend: -2.4,
       icon: <Users className="w-4 h-4" />
     }

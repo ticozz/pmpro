@@ -14,6 +14,9 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import useSWR from 'swr';
+import { CardWrapper } from "@/components/dashboard/analytics/card-wrapper";
+import { designSystem } from '@/lib/design-system';
+import { cn } from '@/lib/utils';
 
 interface RevenueData {
   labels: string[];
@@ -32,7 +35,7 @@ export function RevenueChart() {
     '/api/analytics/revenue', 
     fetcher,
     {
-      refreshInterval: 30000, // Refresh every 30 seconds
+      refreshInterval: 30000,
       onError: (err) => {
         toast.error("Failed to load revenue data", {
           description: err.message
@@ -43,31 +46,51 @@ export function RevenueChart() {
 
   if (isLoading) return <ChartSkeleton />;
 
-  if (error) {
-    toast.error("Error loading revenue data");
-    return <div>Failed to load revenue data</div>;
+  if (error || !data) {
+    return (
+      <CardWrapper title="Monthly Revenue">
+        <div className={cn(
+          "text-center py-10",
+          designSystem.colors.text.primary
+        )}>
+          Failed to load revenue data
+        </div>
+      </CardWrapper>
+    );
   }
 
-  const chartData: ChartDataPoint[] = data?.labels.map((label: string, index: number) => ({
+  const chartData: ChartDataPoint[] = data?.labels?.map((label: string, index: number) => ({
     name: label,
     revenue: data.values[index]
   })) || [];
 
   return (
-    <Card className="p-6">
-      <h3 className="text-lg font-semibold mb-4">Monthly Revenue</h3>
+    <CardWrapper title="Monthly Revenue">
       <div className="h-[400px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
+            <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
+            <XAxis 
+              dataKey="name" 
+              className={designSystem.colors.text.muted}
+            />
+            <YAxis className={designSystem.colors.text.muted} />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+            />
             <Legend />
-            <Bar dataKey="revenue" fill="#3b82f6" />
+            <Bar 
+              dataKey="revenue" 
+              fill={designSystem.colors.primary.gradient}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+    </CardWrapper>
   );
 } 

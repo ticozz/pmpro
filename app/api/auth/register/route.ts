@@ -1,49 +1,83 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
+import { prisma } from "@/lib/prisma";
+import { hash } from "bcryptjs";
+import { NextResponse } from "next/server";
+import { OrgType, UserRole, SubStatus } from "@prisma/client";
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    const { firstName, lastName, email, password } = body;
+    const { email, password, firstName, lastName, organizationName } =
+      await req.json();
 
-    // Validate required fields
-    if (!email || !password || !firstName || !lastName) {
-      return new NextResponse('Missing required fields', { status: 400 });
-    }
-
-    // Check if user already exists
+    // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: {
-        email: email.toLowerCase(),
-      },
+      where: { email },
     });
 
     if (existingUser) {
-      return new NextResponse('User already exists', { status: 400 });
+      return new NextResponse("User already exists", { status: 400 });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Start a transaction to ensure both organization and user are created
+    const result = await prisma.$transaction(async (tx) => {
+      // Create organization
+      const organization = await tx.organization.create({
+        data: {
+          name: organizationName || `${firstName}'s Organization`,
+          type: OrgType.PROPERTY_MANAGER,
+          subscription: {
+            create: {
+              plan: "FREE",
+              status: SubStatus.ACTIVE,
+              startDate: new Date(),
+            },
+          },
+        },
+      });
 
-    // Create user with the correct model structure
-    const user = await prisma.user.create({
-      data: {
-        email: email.toLowerCase(),
-        password: hashedPassword,
-        firstName,
-        lastName,
-        role: 'USER',
-        status: 'ACTIVE',
-      },
+      // Hash password
+      const hashedPassword = await hash(password, 10);
+
+      // Create user and link to organization
+      const user = await tx.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          firstName,
+          lastName,
+          role: UserRole.ADMIN,
+          status: "ACTIVE",
+          organization: {
+            connect: {
+              id: organization.id,
+            },
+          },
+        },
+        include: {
+          organization: true,
+        },
+      });
+
+      return { user, organization };
     });
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
-
-    return NextResponse.json(userWithoutPassword);
+    // Return success response
+    return NextResponse.json({
+      user: {
+        id: result.user.id,
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        organizationId: result.organization.id,
+        organizationName: result.organization.name,
+      },
+    });
   } catch (error) {
-    console.error('Registration error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error("[REGISTRATION_ERROR]", error);
+    return new NextResponse(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Registration failed",
+      }),
+      { status: 500 }
+    );
   }
-} 
+}

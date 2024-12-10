@@ -33,6 +33,7 @@ model Organization {
   type         OrgType       @default(PROPERTY_MANAGER)
   users        User[]
   subscription Subscription?
+  bankAccounts BankAccount[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -65,6 +66,7 @@ model Property {
   insurances  Insurance[]
   inspections Inspection[]
   amenities   Amenity[] // Many-to-many relation with Amenity
+  bankAccounts BankAccount[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 }
@@ -217,6 +219,7 @@ model Payment {
   dueDate     DateTime
   paidDate    DateTime?
   transaction Transaction?
+  bankTransaction BankTransaction?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 }
@@ -498,4 +501,63 @@ enum NotificationType {
   PAYMENT
   LEASE
   GENERAL
+}
+
+enum BankAccountType {
+  CHECKING
+  SAVINGS
+}
+
+enum BankAccountStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TransactionCategory {
+  RENT
+  MAINTENANCE
+  UTILITIES
+  INSURANCE
+  TAXES
+  OTHER
+}
+
+model BankAccount {
+  id            String           @id @default(cuid())
+  name          String
+  bankName      String
+  accountNumber String
+  routingNumber String
+  type          BankAccountType
+  status        BankAccountStatus @default(ACTIVE)
+  balance       Float            @default(0)
+  description   String?
+  property      Property?        @relation(fields: [propertyId], references: [id])
+  propertyId    String?
+  organization  Organization     @relation(fields: [orgId], references: [id])
+  orgId         String
+  transactions  BankTransaction[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([propertyId])
+  @@index([orgId])
+}
+
+model BankTransaction {
+  id            String             @id @default(cuid())
+  date          DateTime           @default(now())
+  description   String
+  amount        Float
+  type          TransactionType    // Using existing TransactionType enum
+  category      TransactionCategory
+  reference     String            @unique
+  bankAccount   BankAccount       @relation(fields: [bankAccountId], references: [id])
+  bankAccountId String
+  payment       Payment?          @relation(fields: [paymentId], references: [id])
+  paymentId     String?          @unique
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([bankAccountId])
 }

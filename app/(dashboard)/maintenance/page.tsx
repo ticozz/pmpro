@@ -1,101 +1,120 @@
 'use client'
 
 import { MaintenanceList } from '@/components/maintenance/maintenance-list'
+import { MaintenanceFilters } from '@/components/maintenance/maintenance-filters'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { designSystem } from '@/lib/design-system'
+import { cn } from '@/lib/utils'
+import { AlertTriangle, RotateCw, CheckCircle2, AlertCircle } from 'lucide-react'
+
+const stats = [
+  {
+    label: 'Open Requests',
+    value: '12',
+    change: '+2 from last week',
+    description: 'Pending maintenance requests',
+    icon: AlertTriangle,
+    iconColor: 'text-orange-500',
+  },
+  {
+    label: 'In Progress',
+    value: '8',
+    change: '-1 from last week',
+    description: 'Currently being handled',
+    icon: RotateCw,
+    iconColor: 'text-blue-500',
+  },
+  {
+    label: 'Completed',
+    value: '45',
+    change: '+12% vs last month',
+    description: 'This month',
+    icon: CheckCircle2,
+    iconColor: 'text-green-500',
+  },
+  {
+    label: 'Emergency',
+    value: '2',
+    change: '+1 from yesterday',
+    description: 'Require immediate attention',
+    icon: AlertCircle,
+    iconColor: 'text-red-500',
+  },
+]
 
 export default function MaintenancePage() {
   const router = useRouter()
 
   return (
-    <div className="p-6">
+    <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Maintenance</h1>
-          <p className="text-gray-600">Manage maintenance requests and work orders</p>
+          <h1 className={cn(
+            "text-2xl font-bold",
+            designSystem.colors.text.primary
+          )}>
+            Maintenance
+          </h1>
+          <p className={designSystem.colors.text.secondary}>
+            Manage maintenance requests and work orders
+          </p>
         </div>
         <Button 
           onClick={() => router.push('/maintenance/new')}
-          className="bg-blue-600 hover:bg-blue-700"
+          className={cn(
+            "gap-2",
+            designSystem.colors.primary.gradient,
+            "text-white hover:opacity-90"
+          )}
         >
-          <span className="mr-2">+</span> New Work Order
+          <span>+</span> New Work Order
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="rounded-lg border p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium">Open Requests</p>
-              <h2 className="text-3xl font-bold mt-2">12</h2>
+        {stats.map((stat) => (
+          <div 
+            key={stat.label}
+            className={cn(
+              designSystem.effects.card,
+              "p-4 hover:shadow-md transition-all duration-200"
+            )}
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <p className={cn(
+                  "text-sm font-medium",
+                  designSystem.colors.text.primary
+                )}>
+                  {stat.label}
+                </p>
+                <h2 className="text-3xl font-bold mt-2">{stat.value}</h2>
+              </div>
+              <stat.icon className={cn("h-5 w-5", stat.iconColor)} />
             </div>
-            <span className="text-orange-500">⚠️</span>
+            <p className={cn(
+              "text-sm mt-2",
+              designSystem.colors.text.secondary
+            )}>
+              {stat.description}
+            </p>
+            <p className={cn(
+              "text-sm",
+              designSystem.colors.text.muted
+            )}>
+              {stat.change}
+            </p>
           </div>
-          <p className="text-sm text-gray-600 mt-2">Pending maintenance requests</p>
-          <p className="text-sm text-gray-600">+2 from last week</p>
-        </div>
-
-        <div className="rounded-lg border p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium">In Progress</p>
-              <h2 className="text-3xl font-bold mt-2">8</h2>
-            </div>
-            <span className="text-blue-500">🔄</span>
-          </div>
-          <p className="text-sm text-gray-600 mt-2">Currently being handled</p>
-          <p className="text-sm text-gray-600">-1 from last week</p>
-        </div>
-
-        <div className="rounded-lg border p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium">Completed</p>
-              <h2 className="text-3xl font-bold mt-2">45</h2>
-            </div>
-            <span className="text-green-500">✅</span>
-          </div>
-          <p className="text-sm text-gray-600 mt-2">This month</p>
-          <p className="text-sm text-gray-600">+12% vs last month</p>
-        </div>
-
-        <div className="rounded-lg border p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium">Emergency</p>
-              <h2 className="text-3xl font-bold mt-2">2</h2>
-            </div>
-            <span className="text-red-500">🚨</span>
-          </div>
-          <p className="text-sm text-gray-600 mt-2">Require immediate attention</p>
-          <p className="text-sm text-gray-600">+1 from yesterday</p>
-        </div>
+        ))}
       </div>
 
-      <div className="bg-white rounded-lg border p-6">
-        <div className="flex items-center space-x-4 mb-4">
-          <input
-            type="text"
-            placeholder="Search requests..."
-            className="flex-1 px-4 py-2 border rounded-lg"
-          />
-          <select className="px-4 py-2 border rounded-lg">
-            <option>All Status</option>
-          </select>
-          <select className="px-4 py-2 border rounded-lg">
-            <option>All Priorities</option>
-          </select>
-          <select className="px-4 py-2 border rounded-lg">
-            <option>All Categories</option>
-          </select>
-          <Button variant="outline">
-            More Filters
-          </Button>
-          <Button variant="outline">
-            Clear Filters
-          </Button>
-        </div>
+      <MaintenanceFilters />
 
+      <div className={cn(
+        designSystem.effects.card,
+        "p-6"
+      )}>
         <MaintenanceList />
       </div>
     </div>

@@ -1,54 +1,101 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Input } from '@/components/ui/input';
+import * as z from 'zod';
+import { PropertyType, Status } from '@prisma/client';
 import { Button } from '@/components/ui/button';
-import { Selectui } from '@/components/ui/select';
-import { PropertyType } from '@prisma/client';
-import { z } from 'zod';
-import Select from 'react-select';
+import { Input } from '@/components/ui/input';
+import { SelectSearch } from '@/components/ui/select-search';
 import { countries } from 'countries-list';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Selectui,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const propertySchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
   type: z.nativeEnum(PropertyType),
-  managerId: z.string().min(1, 'Property Manager is required'),
+  managerId: z.string().min(1, "Property Manager is required"),
+  status: z.nativeEnum(Status).default(Status.ACTIVE),
   address: z.object({
-    street: z.string().min(1, 'Street is required'),
-    city: z.string().min(1, 'City is required'),
-    state: z.string().min(1, 'State is required'),
-    zipCode: z.string().min(1, 'ZIP code is required'),
-    country: z.string().min(1, 'Country is required'),
+    street: z.string().min(1, "Street is required"),
+    unit: z.string().optional(),
+    city: z.string().min(1, "City is required"),
+    state: z.string().min(1, "State is required"),
+    zipCode: z.string().min(1, "ZIP code is required"),
+    country: z.string().min(1, "Country is required"),
   }),
 });
 
-type PropertyFormData = z.infer<typeof propertySchema>;
+const countryOptions = Object.entries(countries)
+  .map(([code, country]) => ({
+    value: code,
+    label: country.name
+  }))
+  .sort((a, b) => a.label.localeCompare(b.label));
 
-// Mock data for managers - in a real app, this would come from your API
-const managers = [
-  { id: '1', name: 'Manager 1' },
-  { id: '2', name: 'Manager 2' },
-  { id: '3', name: 'Manager 3' },
-];
+type FormValues = z.infer<typeof formSchema>;
 
-// Convert countries object to array of options
-const countryOptions = Object.entries(countries).map(([code, country]) => ({
-  value: code,
-  label: country.name
-}));
+type Manager = {
+  id: string;
+  name: string;
+};
 
 export function PropertyForm() {
   const router = useRouter();
+  const [managers, setManagers] = useState<Manager[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<PropertyFormData>({
-    resolver: zodResolver(propertySchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      type: PropertyType.RESIDENTIAL,
+      status: Status.ACTIVE,
+      managerId: '',
+      address: {
+        street: '',
+        unit: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        country: '',
+      },
+    },
   });
 
-  const onSubmit = async (data: PropertyFormData) => {
+  useEffect(() => {
+    const fetchManagers = async () => {
+      try {
+        const response = await fetch('/api/users/managers');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setManagers(data);
+      } catch (error) {
+        console.error('Error fetching managers:', error);
+      }
+    };
+
+    fetchManagers();
+  }, []);
+
+  async function onSubmit(data: FormValues) {
     setIsLoading(true);
     try {
       const response = await fetch('/api/properties', {
@@ -64,120 +111,181 @@ export function PropertyForm() {
       router.push('/dashboard/properties');
       router.refresh();
     } catch (error) {
-      console.error('Error creating property:', error);
+      console.error('Error:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <label htmlFor="name">Property Name</label>
-          <Input id="name" {...register('name')} />
-          {errors.name && (
-            <p className="text-red-500 text-sm">{errors.name.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="type">Property Type</label>
-          <Selectui {...register('type')}>
-            <option value="">Select type</option>
-            {Object.values(PropertyType).map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </Selectui>
-          {errors.type && (
-            <p className="text-red-500 text-sm">{errors.type.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <label htmlFor="managerId">Property Manager</label>
-          <Selectui {...register('managerId')}>
-            <option value="">Select manager</option>
-            {managers.map((manager) => (
-              <option key={manager.id} value={manager.id}>
-                {manager.name}
-              </option>
-            ))}
-          </Selectui>
-          {errors.managerId && (
-            <p className="text-red-500 text-sm">{errors.managerId.message}</p>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-medium mb-4">Address</h3>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <label htmlFor="street">Street</label>
-            <Input id="street" {...register('address.street')} />
-            {errors.address?.street && (
-              <p className="text-red-500 text-sm">{errors.address.street.message}</p>
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Property Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter property name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="city">City</label>
-            <Input id="city" {...register('address.city')} />
-            {errors.address?.city && (
-              <p className="text-red-500 text-sm">{errors.address.city.message}</p>
+          />
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Property Type</FormLabel>
+                <Selectui onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select property type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Object.values(PropertyType).map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type.charAt(0) + type.slice(1).toLowerCase()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Selectui>
+                <FormMessage />
+              </FormItem>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="state">State</label>
-            <Input id="state" {...register('address.state')} />
-            {errors.address?.state && (
-              <p className="text-red-500 text-sm">{errors.address.state.message}</p>
+          />
+          <FormField
+            control={form.control}
+            name="managerId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Property Manager</FormLabel>
+                <Selectui onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select property manager" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {managers?.map((manager) => (
+                      <SelectItem key={manager.id} value={manager.id}>
+                        {manager.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Selectui>
+                <FormMessage />
+              </FormItem>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="zipCode">ZIP Code</label>
-            <Input id="zipCode" {...register('address.zipCode')} />
-            {errors.address?.zipCode && (
-              <p className="text-red-500 text-sm">{errors.address.zipCode.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="country">Country</label>
-            <Select
-              options={countryOptions}
-              isSearchable={true}
-              placeholder="Start typing..."
-              className="react-select"
-              classNamePrefix="react-select"
-              value={countryOptions.find(option => option.value === watch('address.country'))}
-              onChange={(option) => setValue('address.country', option?.value || '')}
-            />
-            {errors.address?.country && (
-              <p className="text-red-500 text-sm">{errors.address.country.message}</p>
-            )}
+          />
+          
+          {/* Address Fields */}
+          <div className="col-span-2">
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="address.street"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Street Address</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address.unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit (Optional)</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address.city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address.state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>State</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address.zipCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ZIP Code</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address.country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country</FormLabel>
+                    <SelectSearch
+                      options={countryOptions}
+                      isSearchable={true}
+                      isClearable={true}
+                      placeholder="Search for a country..."
+                      value={field.value ? countryOptions.find(option => option.value === field.value) : null}
+                      onChange={(option: any) => field.onChange(option?.value || '')}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex justify-end gap-4">
-        <Button 
-          type="button"
-          variant="outline"
-          onClick={() => router.back()}
-          disabled={isLoading}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Creating...' : 'Create Property'}
-        </Button>
-      </div>
-    </form>
+        <div className="flex justify-end space-x-4">
+          <Button
+            variant="outline"
+            onClick={() => router.push('/properties')}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Creating..." : "Create Property"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 } 

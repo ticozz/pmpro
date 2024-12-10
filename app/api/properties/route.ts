@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
@@ -14,16 +14,16 @@ export async function GET() {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
     return NextResponse.json(properties);
   } catch (error) {
-    console.error('Error fetching properties:', error);
+    console.error("Error fetching properties:", error);
     return new NextResponse(
-      JSON.stringify({ error: 'Failed to fetch properties' }), 
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: "Failed to fetch properties" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
@@ -31,7 +31,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    console.log('Creating property with data:', data);
+    console.log("Creating property with data:", data);
 
     const property = await prisma.property.create({
       data: {
@@ -45,24 +45,24 @@ export async function POST(request: Request) {
             city: data.address.city,
             state: data.address.state,
             zipCode: data.address.zipCode,
-            country: data.address.country || 'US',
-          }
-        }
+            country: data.address.country || "US",
+          },
+        },
       },
       include: {
         address: true,
-      }
+      },
     });
 
     return NextResponse.json(property);
   } catch (error) {
-    console.error('Error creating property:', error);
+    console.error("Error creating property:", error);
     return new NextResponse(
-      JSON.stringify({ 
-        error: 'Failed to create property',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }), 
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        error: "Failed to create property",
+        details: error instanceof Error ? error.message : "Unknown error",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
-} 
+}

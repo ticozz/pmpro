@@ -17,6 +17,7 @@ export const designSystem = {
       primary: "text-gray-900",
       secondary: "text-gray-600",
       muted: "text-gray-500",
+      error: "text-red-600",
     },
   },
   effects: {

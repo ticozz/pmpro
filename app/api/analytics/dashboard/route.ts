@@ -1,66 +1,62 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { PaymentStatus } from "@prisma/client";
-import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    // Get metrics
-    const metrics = await prisma.$transaction(async (tx) => {
-      const revenue = await tx.payment.aggregate({
-        where: { status: PaymentStatus.PAID },
-        _sum: { amount: true },
-      });
+    const session = await auth();
+    if (!session) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
 
-      const units = await tx.unit.findMany({
-        select: { status: true },
-      });
+    if (!session.user?.organizationId) {
+      throw new Error("No organization found for user");
+    }
 
-      const activeTenants = await tx.tenant.count({
-        where: { status: "ACTIVE" },
-      });
+    // Get total revenue this month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
 
-      return {
-        revenue: revenue._sum.amount || 0,
-        occupancyRate:
-          (units.filter((u) => u.status === "OCCUPIED").length / units.length) *
-          100,
-        activeTenants,
-      };
+    const revenue = await prisma.payment.aggregate({
+      where: {
+        status: PaymentStatus.PAID,
+        createdAt: {
+          gte: startOfMonth,
+        },
+        lease: {
+          unit: {
+            property: {
+              manager: {
+                organizationId: session.user.organizationId,
+              },
+            },
+          },
+        },
+      },
+      _sum: {
+        amount: true,
+      },
     });
 
-    // Get trends
-    const months = Array.from({ length: 6 }, (_, i) => {
-      const date = subMonths(new Date(), i);
-      return {
-        start: startOfMonth(date),
-        end: endOfMonth(date),
-        label: format(date, "MMM yyyy"),
-      };
-    }).reverse();
-
-    const trends = await Promise.all(
-      months.map(async ({ start, end, label }) => ({
-        date: label,
-        revenue:
-          (
-            await prisma.payment.aggregate({
-              where: {
-                status: PaymentStatus.PAID,
-                createdAt: { gte: start, lte: end },
-              },
-              _sum: { amount: true },
-            })
-          )._sum.amount || 0,
-        occupancyRate: 85, // Placeholder - implement actual calculation if needed
-      }))
-    );
-
-    return NextResponse.json({ metrics, trends });
+    return NextResponse.json({
+      revenue: revenue._sum?.amount || 0,
+    });
   } catch (error) {
-    console.error("Error fetching dashboard data:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch dashboard data" },
+    console.error("[DASHBOARD_ERROR]", error);
+    return new NextResponse(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Internal Server Error",
+        stack:
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.stack
+              : undefined
+            : undefined,
+      }),
       { status: 500 }
     );
   }

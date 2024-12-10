@@ -16,7 +16,7 @@ import useSWR from 'swr';
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { exportToExcel, exportToPDF } from "@/lib/export-utils";
+import { exportToExcel, exportToPDF } from "../../../lib/export-utils";
 
 interface FinancialData {
   date: string;

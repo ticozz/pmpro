@@ -10,7 +10,9 @@ import {
   ArrowRightToLine,
   User,
   Settings,
-  LogOut
+  LogOut,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useUser } from '@/hooks/use-user';
 import { designSystem } from '@/lib/design-system'
+import { useState, useRef } from 'react';
 
 interface SidebarProps {
   open?: boolean;
@@ -32,18 +35,37 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
   const pathname = usePathname();
   const { isOpen, setIsOpen } = useSidebar();
   const { user, isLoading } = useUser();
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const itemRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
   const isOpenValue = open ?? isOpen;
   const setIsOpenValue = onOpenChange ?? setIsOpen;
 
+  const toggleSubmenu = (itemName: string) => {
+    setExpandedItems(prev => 
+      prev.includes(itemName) 
+        ? prev.filter(item => item !== itemName)
+        : [itemName]
+    );
+  };
+
+  const handleMouseLeave = () => {
+    setExpandedItems([]);
+  };
+
   return (
-    <aside className={cn(
-      "fixed inset-y-0 left-0 z-20",
-      designSystem.colors.background.card,
-      "border-r transition-all duration-200 ease-in-out flex flex-col h-screen",
-      isOpenValue ? "w-64" : "w-16",
-      "md:sticky md:top-0"
-    )}>
+    <aside 
+      ref={sidebarRef}
+      onMouseLeave={handleMouseLeave}
+      className={cn(
+        "fixed inset-y-0 left-0 z-30",
+        designSystem.colors.background.card,
+        "border-r transition-all duration-200 ease-in-out flex flex-col h-screen",
+        isOpenValue ? "w-64" : "w-16",
+        "md:sticky md:top-0"
+      )}
+    >
       <div className="h-14 flex-shrink-0 flex items-center border-b">
         {isOpenValue && (
           <div className="px-4 flex-1">
@@ -67,33 +89,105 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
         </Button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">
+      <nav className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0 relative">
         {navigation.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || 
+            (item.submenu?.some(subItem => pathname === subItem.href));
+          const isExpanded = expandedItems.includes(item.name);
           
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-2 p-2 rounded-lg",
-                designSystem.colors.primary.lightHover,
-                isActive && designSystem.colors.primary.light
-              )}
+            <div 
+              key={item.name} 
+              className="relative"
             >
-              <Icon className={cn(
-                "h-5 w-5 shrink-0",
-                isActive ? designSystem.colors.primary.text : designSystem.colors.text.muted
-              )} />
-              <span className={cn(
-                "transition-opacity duration-200",
-                !isOpenValue && "opacity-0 w-0",
-                isActive ? designSystem.colors.primary.text : designSystem.colors.text.secondary
-              )}>
-                {item.name}
-              </span>
-            </Link>
+              {item.submenu ? (
+                <button
+                  ref={(el) => {
+                    if (el) itemRefs.current[item.name] = el;
+                  }}
+                  onClick={() => toggleSubmenu(item.name)}
+                  className={cn(
+                    "flex items-center w-full",
+                    "gap-2 p-2 rounded-lg",
+                    designSystem.colors.primary.lightHover,
+                    (isActive || isExpanded) && designSystem.colors.primary.light
+                  )}
+                >
+                  <Icon className={cn(
+                    "h-5 w-5 shrink-0",
+                    isActive ? designSystem.colors.primary.text : designSystem.colors.text.muted
+                  )} />
+                  {isOpenValue && (
+                    <div className="flex items-center justify-between flex-1">
+                      <span className={cn(
+                        "transition-opacity duration-200",
+                        isActive ? designSystem.colors.primary.text : designSystem.colors.text.secondary
+                      )}>
+                        {item.name}
+                      </span>
+                      <ChevronRight className={cn(
+                        "h-4 w-4 ml-2 transition-transform",
+                        isExpanded && "transform rotate-90"
+                      )} />
+                    </div>
+                  )}
+                </button>
+              ) : (
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-2 p-2 rounded-lg",
+                    designSystem.colors.primary.lightHover,
+                    isActive && designSystem.colors.primary.light
+                  )}
+                >
+                  <Icon className={cn(
+                    "h-5 w-5 shrink-0",
+                    isActive ? designSystem.colors.primary.text : designSystem.colors.text.muted
+                  )} />
+                  <span className={cn(
+                    "transition-opacity duration-200",
+                    !isOpenValue && "opacity-0 w-0",
+                    isActive ? designSystem.colors.primary.text : designSystem.colors.text.secondary
+                  )}>
+                    {item.name}
+                  </span>
+                </Link>
+              )}
+
+              {item.submenu && isOpenValue && isExpanded && (
+                <div 
+                  className={cn(
+                    "fixed w-48 rounded-md shadow-lg",
+                    "z-[9999]",
+                    designSystem.colors.background.card,
+                    "border py-1",
+                    "animate-in slide-in-from-left-1"
+                  )}
+                  style={{ 
+                    left: `${isOpenValue ? "256px" : "64px"}`,
+                    top: itemRefs.current[item.name]?.getBoundingClientRect().top ?? 0,
+                    transform: 'translateY(0)',
+                  }}
+                >
+                  {item.submenu.map((subItem) => (
+                    <Link
+                      key={subItem.href}
+                      href={subItem.href}
+                      className={cn(
+                        "flex items-center px-4 py-2",
+                        designSystem.colors.primary.lightHover,
+                        pathname === subItem.href && designSystem.colors.primary.light,
+                        pathname === subItem.href ? designSystem.colors.primary.text : designSystem.colors.text.secondary
+                      )}
+                    >
+                      {subItem.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>

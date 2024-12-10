@@ -5,6 +5,8 @@ import { Card } from '@/components/ui/card';
 import { Building2, MapPin, Calendar, User } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { PropertyTabs } from "./property-tabs";
+import { designSystem } from '@/lib/design-system';
+import { cn } from '@/lib/utils';
 
 interface PropertyDetailsProps {
   property: {
@@ -29,11 +31,22 @@ interface PropertyDetailsProps {
 export function PropertyDetails({ property }: PropertyDetailsProps) {
   return (
     <div className="space-y-6">
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-4">{property.name}</h2>
+      <Card className={cn(
+        designSystem.effects.card,
+        "p-6"
+      )}>
+        <h2 className={cn(
+          "text-2xl font-bold mb-4",
+          designSystem.colors.text.primary
+        )}>
+          {property.name}
+        </h2>
         <div className="flex justify-between items-start mb-6">
           <div>
-            <div className="flex items-center text-gray-500 mt-2">
+            <div className={cn(
+              "flex items-center mt-2",
+              designSystem.colors.text.muted
+            )}>
               <MapPin className="w-4 h-4 mr-2" />
               <span>
                 {property.address.street}, {property.address.city},{' '}
@@ -41,7 +54,10 @@ export function PropertyDetails({ property }: PropertyDetailsProps) {
               </span>
             </div>
           </div>
-          <div className="text-sm text-gray-500">
+          <div className={cn(
+            "text-sm",
+            designSystem.colors.text.muted
+          )}>
             <div className="flex items-center">
               <Calendar className="w-4 h-4 mr-2" />
               Added {formatDate(property.createdAt)}
@@ -55,26 +71,46 @@ export function PropertyDetails({ property }: PropertyDetailsProps) {
 
         {/* Property Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="text-sm font-medium text-gray-500">Total Units</div>
-            <div className="mt-1 text-2xl font-semibold">
-              {property.units.length}
+          {[
+            {
+              label: 'Total Units',
+              value: property.units.length,
+              icon: Building2
+            },
+            {
+              label: 'Occupied Units',
+              value: property.units.filter((unit: any) => unit.status === 'OCCUPIED').length,
+              color: 'text-green-600'
+            },
+            {
+              label: 'Vacant Units',
+              value: property.units.filter((unit: any) => unit.status === 'VACANT').length,
+              color: 'text-orange-600'
+            }
+          ].map((stat, index) => (
+            <div 
+              key={index}
+              className={cn(
+                designSystem.effects.card,
+                "p-4 hover:shadow-md transition-all duration-200"
+              )}
+            >
+              <div className={cn(
+                "text-sm font-medium",
+                designSystem.colors.text.secondary
+              )}>
+                {stat.label}
+              </div>
+              <div className={cn(
+                "mt-1 text-2xl font-semibold",
+                stat.color || designSystem.colors.text.primary
+              )}>
+                {stat.value}
+              </div>
             </div>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="text-sm font-medium text-gray-500">Occupied Units</div>
-            <div className="mt-1 text-2xl font-semibold">
-              {property.units.filter((unit: any) => unit.status === 'OCCUPIED').length}
-            </div>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="text-sm font-medium text-gray-500">Vacant Units</div>
-            <div className="mt-1 text-2xl font-semibold">
-              {property.units.filter((unit: any) => unit.status === 'VACANT').length}
-            </div>
-          </div>
+          ))}
         </div>
       </Card>
-   </div>
+    </div>
   );
 } 

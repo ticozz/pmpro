@@ -1,43 +1,51 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { PaymentStatus } from "@prisma/client";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const session = await auth();
+    if (!session?.user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
 
-    const revenues = await prisma.payment.groupBy({
-      by: ["createdAt"],
-      _sum: {
-        amount: true,
-      },
+    // Get payments with PAID status
+    const payments = await prisma.payment.findMany({
       where: {
-        status: "PAID",
-        createdAt: {
-          gte: sixMonthsAgo,
+        status: PaymentStatus.PAID,
+        lease: {
+          unit: {
+            property: {
+              manager: {
+                id: session.user.id,
+              },
+            },
+          },
         },
       },
+      select: {
+        amount: true,
+        createdAt: true,
+      },
     });
 
-    // Process data for chart
-    const monthlyData = revenues.reduce((acc, curr) => {
-      const month = curr.createdAt.toLocaleString("default", {
-        month: "short",
-      });
-      acc[month] = (acc[month] || 0) + (curr._sum.amount || 0);
-      return acc;
-    }, {} as Record<string, number>);
+    // Process data
+    const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+    const values = labels.map(() => 0);
 
-    return NextResponse.json({
-      labels: Object.keys(monthlyData),
-      values: Object.values(monthlyData),
+    payments.forEach((payment) => {
+      const month = new Date(payment.createdAt).getMonth();
+      if (month < labels.length) {
+        values[month] += payment.amount;
+      }
     });
+
+    return NextResponse.json({ labels, values });
   } catch (error) {
-    console.error("Error fetching revenue data:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch revenue data" },
-      { status: 500 }
-    );
+    console.error("[REVENUE_ERROR]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }

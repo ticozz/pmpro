@@ -1,147 +1,143 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Alert } from "@/components/ui/alert";
-import Link from 'next/link';
-import { motion } from "framer-motion";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+
+const formSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  firstName: z.string().min(2, "First name is required"),
+  lastName: z.string().min(2, "Last name is required"),
+  organizationName: z.string().min(2, "Organization name is required"),
+});
 
 export function RegisterForm() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      firstName: "",
+      lastName: "",
+      organizationName: "",
+    },
+  });
 
-    const formData = new FormData(event.currentTarget);
-    
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
+      setIsLoading(true);
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          firstName: formData.get('firstName'),
-          lastName: formData.get('lastName'),
-          email: formData.get('email'),
-          password: formData.get('password'),
-          confirmPassword: formData.get('confirmPassword'),
-        }),
+        body: JSON.stringify(values),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to register');
+        throw new Error(await response.text());
       }
 
-      router.push('/auth/login?registered=true');
+      toast.success("Registration successful!");
+      router.push("/login");
     } catch (error) {
-      console.error('Registration error:', error);
-      setError(error instanceof Error ? error.message : 'An error occurred');
+      toast.error("Registration failed", {
+        description: error instanceof Error ? error.message : "Please try again",
+      });
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <form onSubmit={onSubmit} className="space-y-6" noValidate autoComplete="off">
-        {error && (
-          <Alert variant="error" title="Error">
-            {error}
-          </Alert>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Input
-              name="firstName"
-              placeholder="First name"
-              required
-              disabled={isLoading}
-              className="bg-white/50 backdrop-blur-sm"
-              autoComplete="off"
-            />
-          </div>
-          <div>
-            <Input
-              name="lastName"
-              placeholder="Last name"
-              required
-              disabled={isLoading}
-              className="bg-white/50 backdrop-blur-sm"
-              autoComplete="off"
-            />
-          </div>
-        </div>
-
-        <div>
-          <Input
-            name="email"
-            type="email"
-            placeholder="Email address"
-            required
-            disabled={isLoading}
-            className="bg-white/50 backdrop-blur-sm"
-            autoComplete="off"
-          />
-        </div>
-
-        <div>
-          <Input
-            name="password"
-            type="password"
-            placeholder="Create password"
-            required
-            disabled={isLoading}
-            className="bg-white/50 backdrop-blur-sm"
-            autoComplete="new-password"
-          />
-        </div>
-
-        <div>
-          <Input
-            name="confirmPassword"
-            type="password"
-            placeholder="Confirm password"
-            required
-            disabled={isLoading}
-            className="bg-white/50 backdrop-blur-sm"
-            autoComplete="new-password"
-          />
-        </div>
-
-        <Button
-          type="submit"
-          className="w-full"
-          size="lg"
-          disabled={isLoading}
-          isLoading={isLoading}
-        >
-          {isLoading ? 'Creating Account...' : 'Create Account'}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="firstName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>First Name</FormLabel>
+              <FormControl>
+                <Input {...field} disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="lastName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Last Name</FormLabel>
+              <FormControl>
+                <Input {...field} disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input {...field} type="email" disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input {...field} type="password" disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="organizationName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Organization Name</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Enter your organization name" disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          Register
         </Button>
-
-        <p className="text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link 
-            href="/auth/login" 
-            className="font-medium text-blue-600 hover:text-blue-500"
-          >
-            Sign in
-          </Link>
-        </p>
       </form>
-    </motion.div>
+    </Form>
   );
 } 

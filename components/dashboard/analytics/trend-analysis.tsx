@@ -40,10 +40,10 @@ export function TrendAnalysis() {
   if (isLoading) return <ChartSkeleton />;
   if (error) return <div>Failed to load trend data</div>;
 
-  const chartData = data?.dates.map((date, index) => ({
+  const chartData = data?.dates?.map((date, index) => ({
     date,
-    occupancyRate: data.occupancyRate[index],
-    revenue: data.revenue[index]
+    occupancyRate: data.occupancyRate?.[index] ?? 0,
+    revenue: data.revenue?.[index] ?? 0
   })) || [];
 
   return (

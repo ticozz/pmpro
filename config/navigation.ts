@@ -7,21 +7,73 @@ import {
   BarChart3,
   Settings,
   HelpCircle,
-} from 'lucide-react';
+  Wallet,
+  BanknoteIcon,
+  BarChart4,
+} from "lucide-react";
 
-export const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Properties', href: '/properties', icon: Building2 },
-  { name: 'Tenants', href: '/tenants', icon: Users },
-  { name: 'Leases', href: '/leases', icon: FileText },
-  { name: 'Maintenance', href: '/maintenance', icon: Wrench },
-  { name: 'Reports', href: '/reports', icon: BarChart3 },
-  { name: 'Settings', href: '/settings', icon: Settings },
-  { name: 'Help', href: '/help', icon: HelpCircle },
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: any;
+  submenu?: NavigationSubItem[];
+}
+
+interface NavigationSubItem {
+  name: string;
+  href: string;
+}
+
+export const navigation: NavigationItem[] = [
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    name: "Properties",
+    href: "/properties",
+    icon: Building2,
+  },
+  {
+    name: "Tenants",
+    href: "/tenants",
+    icon: Users,
+  },
+  {
+    name: "Leases",
+    href: "/leases",
+    icon: FileText,
+  },
+  {
+    name: "Maintenance",
+    href: "/maintenance",
+    icon: Wrench,
+  },
+  {
+    name: "Accounting",
+    href: "#",
+    icon: Wallet,
+    submenu: [
+      {
+        name: "Bank Accounts",
+        href: "/accounting/bank-accounts",
+      },
+      {
+        name: "Chart of Accounts",
+        href: "/accounting/chart-of-accounts",
+      },
+    ],
+  },
+  {
+    name: "Analytics",
+    href: "/analytics",
+    icon: BarChart4,
+  },
 ];
 
 export const authRoutes = {
-  signIn: '/auth/login',
-  signUp: '/auth/register',
-  forgotPassword: '/auth/forgot-password'
-} 
+  signIn: "/auth/login",
+  signUp: "/auth/register",
+  forgotPassword: "/auth/forgot-password",
+};

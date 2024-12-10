@@ -8,7 +8,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden z-20">
         <DashboardHeaderClient />
         <main className="flex-1 overflow-y-auto bg-gradient-to-b from-blue-50/30 to-white">
           <div className={designSystem.layout.container + " py-6"}>

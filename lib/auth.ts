@@ -26,6 +26,7 @@ export async function auth() {
         firstName: true,
         lastName: true,
         role: true,
+        organizationId: true,
       },
     });
 

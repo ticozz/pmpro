@@ -1,88 +1,71 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { PaymentStatus, UnitStatus } from "@prisma/client";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // Get last 6 months of data
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-    // Get monthly data
-    const monthlyData = await prisma.$transaction(async (tx) => {
-      const months = Array.from({ length: 6 }, (_, i) => {
-        const date = new Date();
-        date.setMonth(date.getMonth() - i);
-        return date;
-      }).reverse();
-
-      const occupancyRates = await Promise.all(
-        months.map(async (date) => {
-          const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-          const endOfMonth = new Date(
-            date.getFullYear(),
-            date.getMonth() + 1,
-            0
-          );
-
-          const units = await tx.unit.findMany({
-            where: {
-              createdAt: {
-                lte: endOfMonth,
+    // Get monthly revenue
+    const monthlyRevenue = await prisma.payment.groupBy({
+      by: ["createdAt"],
+      where: {
+        status: PaymentStatus.PAID,
+        createdAt: {
+          gte: sixMonthsAgo,
+        },
+        lease: {
+          unit: {
+            property: {
+              manager: {
+                id: session.user.id,
               },
             },
-            select: {
-              status: true,
-            },
-          });
-
-          const occupied = units.filter(
-            (unit) => unit.status === UnitStatus.OCCUPIED
-          ).length;
-          return (occupied / units.length) * 100;
-        })
-      );
-
-      const revenues = await Promise.all(
-        months.map(async (date) => {
-          const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-          const endOfMonth = new Date(
-            date.getFullYear(),
-            date.getMonth() + 1,
-            0
-          );
-
-          const revenue = await tx.payment.aggregate({
-            where: {
-              status: PaymentStatus.PAID,
-              createdAt: {
-                gte: startOfMonth,
-                lte: endOfMonth,
-              },
-            },
-            _sum: {
-              amount: true,
-            },
-          });
-
-          return revenue._sum.amount || 0;
-        })
-      );
-
-      return {
-        dates: months.map((date) =>
-          date.toLocaleString("default", { month: "short" })
-        ),
-        occupancyRate: occupancyRates,
-        revenue: revenues,
-      };
+          },
+        },
+      },
+      _sum: {
+        amount: true,
+      },
     });
 
-    return NextResponse.json(monthlyData);
+    // Process data
+    const dates = Array.from({ length: 6 }, (_, i) => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      return date.toLocaleString("default", { month: "short" });
+    }).reverse();
+
+    const revenue = dates.map(() => 0);
+    const occupancyRate = dates.map(() => 0);
+
+    // Fill in revenue data
+    monthlyRevenue.forEach((entry) => {
+      const monthIndex = dates.indexOf(
+        entry.createdAt.toLocaleString("default", { month: "short" })
+      );
+      if (monthIndex !== -1) {
+        revenue[monthIndex] = entry._sum?.amount || 0;
+      }
+    });
+
+    return NextResponse.json({
+      dates,
+      revenue,
+      occupancyRate,
+    });
   } catch (error) {
-    console.error("Error fetching trend data:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch trend data" },
-      { status: 500 }
-    );
+    console.error("[TRENDS_ERROR]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }
