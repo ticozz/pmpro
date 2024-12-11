@@ -31,9 +31,9 @@ const formSchema = z.object({
   type: z.nativeEnum(PropertyType),
   managerId: z.string().min(1, "Property Manager is required"),
   status: z.nativeEnum(Status).default(Status.ACTIVE),
+  numberOfUnits: z.number().min(0).optional(),
   address: z.object({
     street: z.string().min(1, "Street is required"),
-    unit: z.string().optional(),
     city: z.string().min(1, "City is required"),
     state: z.string().min(1, "State is required"),
     zipCode: z.string().min(1, "ZIP code is required"),
@@ -67,9 +67,9 @@ export function PropertyForm() {
       type: PropertyType.RESIDENTIAL,
       status: Status.ACTIVE,
       managerId: '',
+      numberOfUnits: 0,
       address: {
         street: '',
-        unit: '',
         city: '',
         state: '',
         zipCode: '',
@@ -108,7 +108,15 @@ export function PropertyForm() {
         throw new Error('Failed to create property');
       }
 
-      router.push('/dashboard/properties');
+      const result = await response.json();
+
+      if (result.numberOfUnits && result.numberOfUnits > 0) {
+        // Route to bulk unit creation page
+        router.push(`/properties/${result.property.id}/units/bulk-create?count=${result.numberOfUnits}`);
+      } else {
+        // Route to property details
+        router.push(`/properties/${result.property.id}`);
+      }
       router.refresh();
     } catch (error) {
       console.error('Error:', error);
@@ -183,6 +191,25 @@ export function PropertyForm() {
             )}
           />
           
+          <FormField
+            control={form.control}
+            name="numberOfUnits"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Number of Units (Optional)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    min="0"
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {/* Address Fields */}
           <div className="col-span-2">
             <div className="grid gap-4 md:grid-cols-2">
@@ -192,19 +219,6 @@ export function PropertyForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Street Address</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address.unit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unit (Optional)</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>

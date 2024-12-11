@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -30,39 +33,35 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const data = await request.json();
-    console.log("Creating property with data:", data);
+    const session = await auth();
+    if (!session?.user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const body = await request.json();
+    const { numberOfUnits, ...propertyData } = body;
 
     const property = await prisma.property.create({
       data: {
-        name: data.name,
-        type: data.type,
-        status: data.status,
-        managerId: data.managerId,
+        name: propertyData.name,
+        type: propertyData.type,
+        status: propertyData.status,
+        managerId: propertyData.managerId,
         address: {
           create: {
-            street: data.address.street,
-            city: data.address.city,
-            state: data.address.state,
-            zipCode: data.address.zipCode,
-            country: data.address.country || "US",
+            street: propertyData.address.street,
+            city: propertyData.address.city,
+            state: propertyData.address.state,
+            zipCode: propertyData.address.zipCode,
+            country: propertyData.address.country,
           },
         },
       },
-      include: {
-        address: true,
-      },
     });
 
-    return NextResponse.json(property);
+    return NextResponse.json({ property, numberOfUnits });
   } catch (error) {
-    console.error("Error creating property:", error);
-    return new NextResponse(
-      JSON.stringify({
-        error: "Failed to create property",
-        details: error instanceof Error ? error.message : "Unknown error",
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error("[PROPERTIES_POST]", error);
+    return new NextResponse("Internal error", { status: 500 });
   }
 }

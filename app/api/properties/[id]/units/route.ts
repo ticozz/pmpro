@@ -1,48 +1,40 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const propertyId = params.id;
-    
-    // Verify the property exists first
-    const property = await prisma.property.findUnique({
-      where: { id: propertyId },
-    });
-
-    if (!property) {
-      return new NextResponse(
-        JSON.stringify({ error: "Property not found" }),
-        { status: 404 }
-      );
+    const session = await auth();
+    if (!session?.user) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const data = await request.json();
-    console.log('Creating unit for property:', propertyId, 'with data:', data);
+    const body = await request.json();
 
     const unit = await prisma.unit.create({
       data: {
-        unitNumber: data.unitNumber,
-        type: data.type,
-        size: data.size,
-        rent: data.rent,
-        status: data.status,
-        propertyId: propertyId,
+        unitNumber: body.number,
+        status: body.status,
+        size: body.size,
+        rent: body.rent,
+        bedrooms: body.bedrooms,
+        bathrooms: body.bathrooms,
+        propertyId: params.id,
       },
     });
 
     return NextResponse.json(unit);
   } catch (error) {
-    console.error("Error creating unit:", error);
+    console.error("[UNITS_POST]", error);
     return new NextResponse(
-      JSON.stringify({ 
+      JSON.stringify({
         error: "Failed to create unit",
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : "Unknown error",
       }),
       { status: 500 }
     );
   }
-} 
+}
