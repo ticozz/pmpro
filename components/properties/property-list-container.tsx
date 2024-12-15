@@ -1,16 +1,16 @@
 'use client'
 
-import { useState } from 'react'
 import { PropertyList } from './property-list'
 import { PropertyFilters } from './property-filters'
+import { useOrganization } from '@/hooks/useOrganization'
 
 export function PropertyListContainer() {
-  const [viewType, setViewType] = useState<'grid' | 'list'>('grid')
+  const { organization } = useOrganization();
 
   return (
     <>
-      <PropertyFilters viewType={viewType} onViewChange={setViewType} />
-      <PropertyList viewType={viewType} />
+      <PropertyFilters />
+      <PropertyList />
     </>
   )
 } 

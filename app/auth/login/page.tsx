@@ -1,7 +1,7 @@
 import React from 'react';
-import { AuthLayout } from '@/components/layouts/auth-layout';
 import { LoginForm } from '@/components/auth/login-form';
 import { Metadata } from 'next';
+import { AuthLayout } from '@/components/layouts/auth-layout';
 
 export const metadata: Metadata = {
   title: 'Sign in | PropertyPro',

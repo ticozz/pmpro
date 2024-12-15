@@ -1,12 +1,29 @@
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
-import { NextResponse } from "next/server";
-import { OrgType, UserRole, SubStatus } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { UserRole } from "@prisma/client";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { email, password, firstName, lastName, organizationName } =
-      await req.json();
+    const data = await req.json();
+    console.log("Received registration data:", data);
+
+    const { email, password, firstName, lastName, organizationName } = data;
+
+    // Validate required fields
+    if (!email || !password || !firstName || !lastName || !organizationName) {
+      console.log("Missing fields:", {
+        email,
+        password,
+        firstName,
+        lastName,
+        organizationName,
+      });
+      return NextResponse.json(
+        { error: "All fields are required" },
+        { status: 400 }
+      );
+    }
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -14,70 +31,52 @@ export async function POST(req: Request) {
     });
 
     if (existingUser) {
-      return new NextResponse("User already exists", { status: 400 });
+      return NextResponse.json(
+        { error: "Email already registered" },
+        { status: 400 }
+      );
     }
 
-    // Start a transaction to ensure both organization and user are created
+    // Create organization and user in a transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create organization
       const organization = await tx.organization.create({
-        data: {
-          name: organizationName || `${firstName}'s Organization`,
-          type: OrgType.PROPERTY_MANAGER,
-          subscription: {
-            create: {
-              plan: "FREE",
-              status: SubStatus.ACTIVE,
-              startDate: new Date(),
-            },
-          },
-        },
+        data: { name: organizationName },
       });
 
       // Hash password
       const hashedPassword = await hash(password, 10);
 
-      // Create user and link to organization
+      // Create user
       const user = await tx.user.create({
         data: {
           email,
           password: hashedPassword,
           firstName,
           lastName,
+          organizationId: organization.id,
           role: UserRole.ADMIN,
-          status: "ACTIVE",
-          organization: {
-            connect: {
-              id: organization.id,
-            },
-          },
-        },
-        include: {
-          organization: true,
         },
       });
 
       return { user, organization };
     });
 
-    // Return success response
+    // Return success without sensitive data
     return NextResponse.json({
       user: {
         id: result.user.id,
         email: result.user.email,
         firstName: result.user.firstName,
         lastName: result.user.lastName,
-        organizationId: result.organization.id,
-        organizationName: result.organization.name,
+      },
+      organization: {
+        id: result.organization.id,
+        name: result.organization.name,
       },
     });
   } catch (error) {
-    console.error("[REGISTRATION_ERROR]", error);
-    return new NextResponse(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : "Registration failed",
-      }),
-      { status: 500 }
-    );
+    console.error("[REGISTER_ERROR]", error);
+    return NextResponse.json({ error: "Failed to register" }, { status: 500 });
   }
 }

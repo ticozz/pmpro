@@ -21,12 +21,7 @@ const statusOptions = [
   { label: 'Inactive', value: 'INACTIVE' },
 ] as const;
 
-interface PropertyFiltersProps {
-  viewType: 'grid' | 'list';
-  onViewChange: (value: 'grid' | 'list') => void;
-}
-
-export function PropertyFilters({ viewType, onViewChange }: PropertyFiltersProps) {
+export function PropertyFilters() {
   return (
     <div className={cn(
       "p-4 rounded-lg",
@@ -97,40 +92,6 @@ export function PropertyFilters({ viewType, onViewChange }: PropertyFiltersProps
               </div>
             </SelectContent>
           </Selectui>
-          <ToggleGroup 
-            type="single" 
-            value={viewType} 
-            onValueChange={onViewChange} 
-            className={cn(
-              "h-10",
-              "border rounded-md",
-              "bg-background",
-              designSystem.effects.blur
-            )}
-          >
-            <ToggleGroupItem 
-              value="grid" 
-              aria-label="Grid view"
-              className={cn(
-                "data-[state=on]:bg-blue-600 data-[state=on]:text-white",
-                "hover:text-blue-600 hover:bg-blue-50",
-                "px-3 transition-colors"
-              )}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem 
-              value="list" 
-              aria-label="List view"
-              className={cn(
-                "data-[state=on]:bg-blue-600 data-[state=on]:text-white",
-                "hover:text-blue-600 hover:bg-blue-50",
-                "px-3 transition-colors"
-              )}
-            >
-              <List className="h-4 w-4" />
-            </ToggleGroupItem>
-          </ToggleGroup>
         </div>
       </div>
     </div>

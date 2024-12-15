@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PropertyType, Status } from '@prisma/client';
+import { Status } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SelectSearch } from '@/components/ui/select-search';
@@ -25,6 +25,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+enum PropertyType {
+  RESIDENTIAL = 'RESIDENTIAL',
+  COMMERCIAL = 'COMMERCIAL',
+  MIXED = 'MIXED'
+}
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -59,6 +65,12 @@ export function PropertyForm() {
   const router = useRouter();
   const [managers, setManagers] = useState<Manager[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const propertyTypes = [
+    { label: 'Residential', value: 'RESIDENTIAL' as PropertyType },
+    { label: 'Commercial', value: 'COMMERCIAL' as PropertyType },
+    { label: 'Mixed', value: 'MIXED' as PropertyType }
+  ];
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -111,11 +123,9 @@ export function PropertyForm() {
       const result = await response.json();
 
       if (result.numberOfUnits && result.numberOfUnits > 0) {
-        // Route to bulk unit creation page
-        router.push(`/properties/${result.property.id}/units/bulk-create?count=${result.numberOfUnits}`);
+        router.push(`/dashboard/properties/${result.property.id}/units/bulk-create?count=${result.numberOfUnits}`);
       } else {
-        // Route to property details
-        router.push(`/properties/${result.property.id}`);
+        router.push(`/dashboard/properties/${result.property.id}`);
       }
       router.refresh();
     } catch (error) {
@@ -290,7 +300,7 @@ export function PropertyForm() {
         <div className="flex justify-end space-x-4">
           <Button
             variant="outline"
-            onClick={() => router.push('/properties')}
+            onClick={() => router.push('/dashboard/properties')}
             disabled={isLoading}
           >
             Cancel

@@ -9,66 +9,81 @@ generator client {
 
 // User & Authentication
 model User {
-  id                String               @id @default(cuid())
-  email             String               @unique
-  password          String
-  firstName         String
-  lastName          String
-  phone             String?
-  role              UserRole             @default(USER)
-  status            UserStatus           @default(ACTIVE)
-  organization      Organization?        @relation(fields: [organizationId], references: [id])
-  organizationId    String?
-  properties        Property[] // Properties managed
-  tasks             Task[] // Assigned tasks
-  notifications     Notification[]
-  maintenanceOrders MaintenanceRequest[]
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
+  id                 String               @id @default(cuid())
+  email              String               @unique
+  password           String
+  firstName          String
+  lastName           String
+  phone              String?
+  role               UserRole             @default(USER)
+  status             UserStatus           @default(ACTIVE)
+  organization       Organization?        @relation(fields: [organizationId], references: [id])
+  organizationId     String?
+  managedProperties  Property[]           @relation("PropertyManager")
+  propertyManaging   Property[]           @relation("PropertyManagerRef")
+  tasks              Task[] // Assigned tasks
+  notifications      Notification[]
+  maintenanceOrders  MaintenanceRequest[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  OrganizationMember OrganizationMember[]
 }
 
 model Organization {
-  id           String        @id @default(cuid())
-  name         String
-  type         OrgType       @default(PROPERTY_MANAGER)
-  users        User[]
-  subscription Subscription?
-  bankAccounts BankAccount[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members     OrganizationMember[]
+  properties  Property[]
+  units       Unit[]
+  leases      Lease[]
+  reports     Report[]
+  User        User[]
+  BankAccount BankAccount[]
+
+  @@map("organizations")
 }
 
-model Subscription {
-  id             String       @id @default(cuid())
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  organizationId String       @unique
-  plan           String
-  status         SubStatus    @default(ACTIVE)
-  startDate      DateTime
-  endDate        DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+model OrganizationMember {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  role           String   @default("member")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([userId, organizationId])
+  @@map("organization_members")
 }
 
 // Property Management
 model Property {
-  id          String             @id @default(cuid())
-  name        String
-  type        PropertyType
-  status      Status             @default(ACTIVE)
-  manager     User               @relation(fields: [managerId], references: [id])
-  managerId   String
-  address     Address?
-  financials  PropertyFinancial?
-  units       Unit[]
-  tasks       Task[]
-  documents   Document[]
-  insurances  Insurance[]
-  inspections Inspection[]
-  amenities   Amenity[] // Many-to-many relation with Amenity
+  id             String       @id @default(cuid())
+  name           String
+  type           String
+  status         Status       @default(ACTIVE)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  address        Address?
+  manager        User?        @relation("PropertyManagerRef", fields: [managerId], references: [id])
+  managerId      String?
+  units          Unit[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  managedBy      User[]       @relation("PropertyManager")
+  financials   PropertyFinancial?
+  tasks        Task[]
+  documents    Document[]
+  insurances   Insurance[]
+  inspections  Inspection[]
+  amenities    Amenity[]
   bankAccounts BankAccount[]
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
 }
 
 model PropertyFinancial {
@@ -102,6 +117,8 @@ model Unit {
   inspections         Inspection[]
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+  Organization        Organization?        @relation(fields: [organizationId], references: [id])
+  organizationId      String?
 }
 
 // Tenant Management
@@ -137,22 +154,24 @@ model BackgroundCheck {
 
 // Lease Management
 model Lease {
-  id            String         @id @default(cuid())
-  unit          Unit           @relation(fields: [unitId], references: [id])
-  unitId        String
-  tenants       Tenant[]
-  startDate     DateTime
-  endDate       DateTime
-  rentAmount    Float
-  depositAmount Float
-  status        LeaseStatus    @default(PENDING)
-  type          LeaseType      @default(FIXED)
-  terms         String? // Additional lease terms
-  documents     Document[]
-  payments      Payment[]
-  renewals      LeaseRenewal[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id             String         @id @default(cuid())
+  unit           Unit           @relation(fields: [unitId], references: [id])
+  unitId         String
+  tenants        Tenant[]
+  startDate      DateTime
+  endDate        DateTime
+  rentAmount     Float
+  depositAmount  Float
+  status         LeaseStatus    @default(PENDING)
+  type           LeaseType      @default(FIXED)
+  terms          String? // Additional lease terms
+  documents      Document[]
+  payments       Payment[]
+  renewals       LeaseRenewal[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  Organization   Organization?  @relation(fields: [organizationId], references: [id])
+  organizationId String?
 }
 
 model LeaseRenewal {
@@ -208,20 +227,20 @@ model Vendor {
 
 // Financial Management
 model Payment {
-  id          String        @id @default(cuid())
-  tenant      Tenant        @relation(fields: [tenantId], references: [id])
-  tenantId    String
-  lease       Lease         @relation(fields: [leaseId], references: [id])
-  leaseId     String
-  amount      Float
-  type        PaymentType
-  status      PaymentStatus @default(PENDING)
-  dueDate     DateTime
-  paidDate    DateTime?
-  transaction Transaction?
+  id              String           @id @default(cuid())
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  tenantId        String
+  lease           Lease            @relation(fields: [leaseId], references: [id])
+  leaseId         String
+  amount          Float
+  type            PaymentType
+  status          PaymentStatus    @default(PENDING)
+  dueDate         DateTime
+  paidDate        DateTime?
+  transaction     Transaction?
   bankTransaction BankTransaction?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Transaction {
@@ -523,41 +542,60 @@ enum TransactionCategory {
 }
 
 model BankAccount {
-  id            String           @id @default(cuid())
+  id            String            @id @default(cuid())
   name          String
   bankName      String
   accountNumber String
   routingNumber String
   type          BankAccountType
   status        BankAccountStatus @default(ACTIVE)
-  balance       Float            @default(0)
+  balance       Float             @default(0)
   description   String?
-  property      Property?        @relation(fields: [propertyId], references: [id])
+  property      Property?         @relation(fields: [propertyId], references: [id])
   propertyId    String?
-  organization  Organization     @relation(fields: [orgId], references: [id])
+  organization  Organization      @relation(fields: [orgId], references: [id])
   orgId         String
   transactions  BankTransaction[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
   @@index([propertyId])
   @@index([orgId])
 }
 
 model BankTransaction {
-  id            String             @id @default(cuid())
-  date          DateTime           @default(now())
+  id            String              @id @default(cuid())
+  date          DateTime            @default(now())
   description   String
   amount        Float
-  type          TransactionType    // Using existing TransactionType enum
+  type          TransactionType // Using existing TransactionType enum
   category      TransactionCategory
-  reference     String            @unique
-  bankAccount   BankAccount       @relation(fields: [bankAccountId], references: [id])
+  reference     String              @unique
+  bankAccount   BankAccount         @relation(fields: [bankAccountId], references: [id])
   bankAccountId String
-  payment       Payment?          @relation(fields: [paymentId], references: [id])
-  paymentId     String?          @unique
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  payment       Payment?            @relation(fields: [paymentId], references: [id])
+  paymentId     String?             @unique
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   @@index([bankAccountId])
+}
+
+model Report {
+  id             String       @id @default(uuid())
+  name           String
+  type           ReportType
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("reports")
+}
+
+enum ReportType {
+  FINANCIAL
+  OCCUPANCY
+  MAINTENANCE
+  CUSTOM
 }

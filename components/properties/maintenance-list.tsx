@@ -1,15 +1,60 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Wrench, Clock, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useSession } from "next-auth/react";
 
-interface MaintenanceListProps {
-  property: any; // Replace with proper type
-}
+export function MaintenanceList() {
+  const { data: session, status } = useSession();
+  const [requests, setRequests] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export function MaintenanceList({ property }: MaintenanceListProps) {
-    const statusColors = {
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        if (status !== 'authenticated' || !session?.user?.id) {
+          console.log("Session not ready:", { status, session });
+          return;
+        }
+
+        setIsLoading(true);
+        const response = await fetch('/api/maintenance', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-organization-id': session.user.organizationId,
+            'x-user-id': session.user.id,
+          },
+        });
+
+        console.log("Response status:", response.status);
+        const responseText = await response.text();
+        console.log("Response body:", responseText);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch maintenance requests');
+        }
+
+        const data = JSON.parse(responseText);
+        setRequests(data);
+      } catch (error) {
+        console.error('Error fetching maintenance requests:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRequests();
+  }, [session, status]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  const statusColors = {
     OPEN: 'warning',
     IN_PROGRESS: 'default',
     COMPLETED: 'success',
@@ -34,7 +79,7 @@ export function MaintenanceList({ property }: MaintenanceListProps) {
       </div>
 
       <div className="space-y-4">
-        {property.maintenanceRequests?.map((request: any) => (
+        {requests.map((request) => (
           <Card key={request.id}>
             <div className="p-4">
               <div className="flex items-start justify-between">

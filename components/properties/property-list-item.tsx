@@ -85,7 +85,7 @@ export function PropertyListItem({ property }: PropertyListItemProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-2 w-full sm:w-auto">
-        <Link href={`/properties/${property.id}`} className="w-full sm:w-auto">
+        <Link href={`/dashboard/properties/${property.id}`} className="w-full sm:w-auto">
           <Button 
             variant="outline" 
             size="sm"

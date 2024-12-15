@@ -86,7 +86,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Link href={`/properties/${property.id}`}>
+        <Link href={`/dashboard/properties/${property.id}`}>
           <Button 
             variant="outline" 
             size="sm"

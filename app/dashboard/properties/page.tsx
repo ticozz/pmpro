@@ -21,7 +21,7 @@ export default function PropertiesPage() {
             Manage your property portfolio
           </p>
         </div>
-        <Link href="/properties/new">
+        <Link href="/dashboard/properties/new">
           <Button
             className={cn(
               "gap-2",

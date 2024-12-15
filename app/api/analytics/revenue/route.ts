@@ -1,51 +1,43 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
 import { PaymentStatus } from "@prisma/client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { withOrganization } from "@/lib/api/middleware";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get payments with PAID status
-    const payments = await prisma.payment.findMany({
+    const organizationId = session.user.organizationId;
+
+    const revenue = await prisma.payment.aggregate({
       where: {
-        status: PaymentStatus.PAID,
+        status: PaymentStatus.COMPLETED,
         lease: {
           unit: {
-            property: {
-              manager: {
-                id: session.user.id,
-              },
-            },
+            property: { organizationId },
           },
         },
       },
-      select: {
+      _sum: {
         amount: true,
-        createdAt: true,
       },
     });
 
-    // Process data
-    const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-    const values = labels.map(() => 0);
-
-    payments.forEach((payment) => {
-      const month = new Date(payment.createdAt).getMonth();
-      if (month < labels.length) {
-        values[month] += payment.amount;
-      }
+    return NextResponse.json({
+      total: revenue._sum?.amount || 0,
     });
-
-    return NextResponse.json({ labels, values });
   } catch (error) {
     console.error("[REVENUE_ERROR]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

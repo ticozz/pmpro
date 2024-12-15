@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { authenticate } from "@/lib/index";
+import { authenticate } from "@/lib/auth/authenticate";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const { email, password } = body;
 
     const user = await authenticate(email, password);
-    
+
     if (!user) {
       return NextResponse.json(
         { error: "Invalid credentials" },
@@ -19,10 +19,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ user });
   } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json(
-      { error: "An error occurred" },
-      { status: 500 }
-    );
+    console.error("Login error:", error);
+    return NextResponse.json({ error: "An error occurred" }, { status: 500 });
   }
-} 
+}

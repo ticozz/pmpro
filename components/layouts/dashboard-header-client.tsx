@@ -5,19 +5,15 @@ import { Input } from '@/components/ui/input'
 import { Menu } from 'lucide-react'
 import { NotificationBell } from '@/components/layouts/notification-bell'
 import { useSidebar } from '@/components/providers/sidebar-provider'
+import { OrganizationSwitcher } from '@/components/layouts/OrganizationSwitcher'
 import { designSystem } from '@/lib/design-system'
 import { cn } from '@/lib/utils'
 
-interface DashboardHeaderClientProps {
-  onMenuClick?: () => void;
-}
-
-export function DashboardHeaderClient({ onMenuClick }: DashboardHeaderClientProps) {
+export function DashboardHeaderClient() {
   const { setIsOpen } = useSidebar();
 
   const handleClick = () => {
-    if (onMenuClick) onMenuClick();
-    else setIsOpen(true);
+    setIsOpen(true);
   };
 
   return (
@@ -37,6 +33,7 @@ export function DashboardHeaderClient({ onMenuClick }: DashboardHeaderClientProp
         >
           <Menu className="h-5 w-5" />
         </Button>
+        <OrganizationSwitcher />
         <div className="flex-1">
           <Input 
             type="search" 

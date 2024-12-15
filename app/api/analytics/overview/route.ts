@@ -1,83 +1,78 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { PaymentStatus, UnitStatus, TenantStatus } from "@prisma/client";
+import { PaymentStatus, UnitStatus } from "@prisma/client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { withOrganization } from "@/lib/api/middleware";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  try {
-    const session = await auth();
-    if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
+export async function GET(req: NextRequest) {
+  return withOrganization(req, async () => {
+    try {
+      const session = await getServerSession(authOptions);
+      if (!session) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
 
-    // Get total revenue from paid payments
-    const revenue = await prisma.payment.aggregate({
-      where: {
-        status: PaymentStatus.PAID,
-        lease: {
-          unit: {
-            property: {
-              manager: {
-                id: session.user.id,
-              },
-            },
+      const organizationId = session.user.organizationId;
+
+      // Get total properties
+      const propertyCount = await prisma.property.count({
+        where: {
+          organization: { id: organizationId },
+        },
+      });
+
+      // Get total units
+      const unitCount = await prisma.unit.count({
+        where: {
+          property: {
+            organization: { id: organizationId },
           },
         },
-      },
-      _sum: {
-        amount: true,
-      },
-    });
+      });
 
-    // Get occupancy rate
-    const totalUnits = await prisma.unit.count({
-      where: {
-        property: {
-          manager: {
-            id: session.user.id,
+      // Get occupied units
+      const occupiedUnits = await prisma.unit.count({
+        where: {
+          property: {
+            organization: { id: organizationId },
           },
+          status: UnitStatus.OCCUPIED,
         },
-      },
-    });
+      });
 
-    const occupiedUnits = await prisma.unit.count({
-      where: {
-        status: UnitStatus.OCCUPIED,
-        property: {
-          manager: {
-            id: session.user.id,
-          },
-        },
-      },
-    });
-
-    // Get active tenants count
-    const activeTenants = await prisma.tenant.count({
-      where: {
-        status: TenantStatus.ACTIVE,
-        leases: {
-          some: {
+      // Get total revenue
+      const revenue = await prisma.payment.aggregate({
+        where: {
+          status: PaymentStatus.COMPLETED,
+          lease: {
             unit: {
               property: {
-                manager: {
-                  id: session.user.id,
-                },
+                organization: { id: organizationId },
               },
             },
           },
         },
-      },
-    });
+        _sum: {
+          amount: true,
+        },
+      });
 
-    return NextResponse.json({
-      revenue: revenue._sum?.amount || 0,
-      occupancyRate: totalUnits ? (occupiedUnits / totalUnits) * 100 : 0,
-      activeTenants,
-    });
-  } catch (error) {
-    console.error("[OVERVIEW_ERROR]", error);
-    return new NextResponse("Internal Error", { status: 500 });
-  }
+      return NextResponse.json({
+        properties: propertyCount,
+        units: unitCount,
+        occupiedUnits,
+        revenue: revenue._sum?.amount || 0,
+      });
+    } catch (error) {
+      console.error("[OVERVIEW_ERROR]", error);
+      return NextResponse.json(
+        { error: "Internal Server Error" },
+        { status: 500 }
+      );
+    }
+  });
 }

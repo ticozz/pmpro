@@ -15,31 +15,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useAuth } from "@/lib/hooks/use-auth"
+import { useSession } from "next-auth/react"
+import { signOut } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 export function UserNav() {
-  const { user, signOut } = useAuth();
+  const { data: session } = useSession();
+  console.log("UserNav - Session Data:", session);
   const router = useRouter();
 
   const getInitials = () => {
-    if (!user) return 'U';
-    return `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
+    if (!session?.user) return 'U';
+    return `${session.user.firstName?.[0] || ''}${session.user.lastName?.[0] || ''}`.toUpperCase();
   };
 
   const handleLogout = async () => {
-    try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        router.push('/auth/login');
-      }
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
+    await signOut({ redirect: true, callbackUrl: '/auth/login' });
   };
 
   return (
@@ -49,7 +41,7 @@ export function UserNav() {
           <Avatar className="h-10 w-10 border border-gray-200">
             <AvatarImage 
               src="/avatars/default.svg" 
-              alt={user?.firstName || 'User'} 
+              alt={session?.user?.firstName || 'User'} 
               onError={(e) => {
                 e.currentTarget.src = '/avatars/default.svg';
               }}
@@ -63,9 +55,11 @@ export function UserNav() {
       <DropdownMenuContent className="w-64" align="end">
         <DropdownMenuLabel className="font-normal p-4 pb-2">
           <div className="flex flex-col space-y-2">
-            <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
+            <p className="text-sm font-medium">
+              {session?.user?.firstName} {session?.user?.lastName}
+            </p>
             <p className="text-xs text-muted-foreground truncate">
-              {user?.email}
+              {session?.user?.email}
             </p>
           </div>
         </DropdownMenuLabel>

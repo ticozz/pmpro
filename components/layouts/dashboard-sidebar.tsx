@@ -12,7 +12,15 @@ import {
   Settings,
   LogOut,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Home,
+  Building2,
+  Wallet,
+  Users,
+  Hammer,
+  BarChart3,
+  Banknote,
+  LucideIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,10 +33,18 @@ import {
 import { useUser } from '@/hooks/use-user';
 import { designSystem } from '@/lib/design-system'
 import { useState, useRef } from 'react';
+import { signOut } from "next-auth/react";
 
 interface SidebarProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+}
+
+interface Route {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  submenu?: Array<{ name: string; href: string; }>;
 }
 
 export function Sidebar({ open, onOpenChange }: SidebarProps) {
@@ -52,6 +68,69 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
 
   const handleMouseLeave = () => {
     setExpandedItems([]);
+  };
+
+  const routes: Route[] = [
+    {
+      name: "Dashboard",
+      href: "/dashboard",
+      icon: Home
+    },
+    {
+      name: "Properties",
+      href: "/dashboard/properties",
+      icon: Building2
+    },
+    {
+      name: "Accounting",
+      href: "#",
+      icon: Banknote,
+      submenu: [
+        {
+          name: "Bank Accounts",
+          href: "/dashboard/accounting/bank-accounts",
+        },
+        {
+          name: "Transactions",
+          href: "/dashboard/accounting/transactions",
+        },
+        {
+          name: "Invoices",
+          href: "/dashboard/accounting/invoices",
+        },
+        {
+          name: "Reports",
+          href: "/dashboard/accounting/reports",
+        }
+      ]
+    },
+    {
+      name: "Finance",
+      href: "/dashboard/finance",
+      icon: Wallet
+    },
+    {
+      name: "Tenants",
+      href: "/dashboard/tenants",
+      icon: Users
+    },
+    {
+      name: "Maintenance",
+      href: "/dashboard/maintenance",
+      icon: Hammer
+    },
+    {
+      name: "Analytics",
+      href: "/dashboard/analytics",
+      icon: BarChart3
+    }
+  ];
+
+  const handleSignOut = async () => {
+    await signOut({ 
+      callbackUrl: "/",  // Redirect to root after sign out
+      redirect: true 
+    });
   };
 
   return (
@@ -90,7 +169,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
       </div>
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0 relative">
-        {navigation.map((item) => {
+        {routes.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || 
             (item.submenu?.some(subItem => pathname === subItem.href));
@@ -267,10 +346,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
                   <DropdownMenuSeparator className={designSystem.dropdown.content.separator} />
                   <div className={designSystem.dropdown.content.inner}>
                     <DropdownMenuItem 
-                      onClick={() => {
-                        sessionStorage.removeItem('user');
-                        window.location.href = '/auth/login';
-                      }}
+                      onClick={handleSignOut}
                       className={cn(
                         designSystem.dropdown.content.item.base,
                         designSystem.dropdown.content.item.danger
@@ -333,10 +409,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
                 <DropdownMenuSeparator className={designSystem.dropdown.content.separator} />
                 <div className={designSystem.dropdown.content.inner}>
                   <DropdownMenuItem 
-                    onClick={() => {
-                      sessionStorage.removeItem('user');
-                      window.location.href = '/auth/login';
-                    }}
+                    onClick={handleSignOut}
                     className={cn(
                       designSystem.dropdown.content.item.base,
                       designSystem.dropdown.content.item.danger

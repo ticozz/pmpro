@@ -74,8 +74,7 @@ export function BulkUnitForm({ propertyId, unitCount }: BulkUnitFormProps) {
         }
       }
 
-      router.push(`/properties/${propertyId}`);
-      router.refresh();
+      router.push(`/dashboard/properties/${propertyId}`);
     } catch (error) {
       console.error('Error:', error);
       setError(error instanceof Error ? error.message : 'Failed to create units');

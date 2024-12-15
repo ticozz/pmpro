@@ -31,6 +31,8 @@ import {
 import { designSystem } from '@/lib/design-system';
 import { cn } from '@/lib/utils';
 import { Plus } from "lucide-react";
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 const unitSchema = z.object({
   unitNumber: z.string().min(1, "Unit number is required"),
@@ -38,6 +40,8 @@ const unitSchema = z.object({
   size: z.coerce.number().min(1, "Size is required"),
   rent: z.coerce.number().min(0, "Rent must be 0 or greater"),
   status: z.enum(["VACANT", "OCCUPIED", "MAINTENANCE"]),
+  bedrooms: z.coerce.number().optional(),
+  bathrooms: z.coerce.number().optional(),
 });
 
 type UnitFormValues = z.infer<typeof unitSchema>;
@@ -48,6 +52,7 @@ interface UnitFormProps {
 }
 
 export function UnitForm({ propertyId, onSuccess }: UnitFormProps) {
+  const [open, setOpen] = useState(false);
   console.log('UnitForm propertyId:', propertyId);
 
   const form = useForm<UnitFormValues>({
@@ -61,30 +66,36 @@ export function UnitForm({ propertyId, onSuccess }: UnitFormProps) {
     },
   });
 
+  const router = useRouter();
+
   async function onSubmit(data: UnitFormValues) {
     try {
-      console.log('Submitting with propertyId:', propertyId);
+      console.log("Submitting unit data:", data);
       const response = await fetch(`/api/properties/${propertyId}/units`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
+      console.log("Response status:", response.status);
+      const responseData = await response.json();
+      console.log("Response data:", responseData);
+
       if (!response.ok) {
-        const error = await response.json();
-        console.error('Server response:', error);
-        throw new Error(error.error || "Failed to create unit");
+        throw new Error(responseData.error || 'Failed to create unit');
       }
-      
+
+      setOpen(false);
       form.reset();
-      onSuccess?.();
+      router.push(`/dashboard/properties/${propertyId}`);
+      router.refresh();
     } catch (error) {
-      console.error("Error creating unit:", error);
+      console.error('Error creating unit:', error);
     }
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button 
           className={cn(

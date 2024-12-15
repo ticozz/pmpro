@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -43,6 +44,8 @@ export function RegisterForm() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsLoading(true);
+      console.log('Registration values:', values);
+
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
@@ -52,11 +55,23 @@ export function RegisterForm() {
       });
 
       if (!response.ok) {
-        throw new Error(await response.text());
+        const error = await response.json();
+        console.error('Registration error:', error);
+        throw new Error(error.error || "Registration failed");
+      }
+
+      const result = await signIn("credentials", {
+        email: values.email,
+        password: values.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        throw new Error("Failed to sign in");
       }
 
       toast.success("Registration successful!");
-      router.push("/login");
+      router.push("/dashboard");
     } catch (error) {
       toast.error("Registration failed", {
         description: error instanceof Error ? error.message : "Please try again",
@@ -68,7 +83,11 @@ export function RegisterForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form 
+        onSubmit={form.handleSubmit(onSubmit)} 
+        className="space-y-4"
+        autoComplete="off"
+      >
         <FormField
           control={form.control}
           name="firstName"
@@ -76,7 +95,12 @@ export function RegisterForm() {
             <FormItem>
               <FormLabel>First Name</FormLabel>
               <FormControl>
-                <Input {...field} disabled={isLoading} />
+                <Input 
+                  {...field} 
+                  disabled={isLoading} 
+                  autoComplete="off"
+                  spellCheck="false"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -89,7 +113,12 @@ export function RegisterForm() {
             <FormItem>
               <FormLabel>Last Name</FormLabel>
               <FormControl>
-                <Input {...field} disabled={isLoading} />
+                <Input 
+                  {...field} 
+                  disabled={isLoading} 
+                  autoComplete="off"
+                  spellCheck="false"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -102,7 +131,13 @@ export function RegisterForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input {...field} type="email" disabled={isLoading} />
+                <Input 
+                  {...field} 
+                  type="email" 
+                  disabled={isLoading} 
+                  autoComplete="off"
+                  spellCheck="false"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -115,7 +150,13 @@ export function RegisterForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input {...field} type="password" disabled={isLoading} />
+                <Input 
+                  {...field} 
+                  type="password" 
+                  disabled={isLoading} 
+                  autoComplete="new-password"
+                  spellCheck="false"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -128,7 +169,13 @@ export function RegisterForm() {
             <FormItem>
               <FormLabel>Organization Name</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Enter your organization name" disabled={isLoading} />
+                <Input 
+                  {...field} 
+                  placeholder="Enter your organization name" 
+                  disabled={isLoading} 
+                  autoComplete="off"
+                  spellCheck="false"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
