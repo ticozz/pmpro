@@ -14,15 +14,8 @@ export function LoadingSpinner({ size = "md", className }: LoadingSpinnerProps) 
   };
 
   return (
-    <div
-      className={cn(
-        "animate-spin",
-        sizeClasses[size],
-        designSystem.colors.primary.gradient,
-        className
-      )}
-    >
-      <div className="h-full w-full rounded-full border-2 border-t-transparent" />
+    <div className="flex items-center justify-center p-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
     </div>
   );
 } 

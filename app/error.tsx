@@ -1,12 +1,23 @@
 'use client';
 
-export default function Error() {
+import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error('Error:', error);
+  }, [error]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold">500 - Server Error</h1>
-        <p className="mt-4 text-gray-600">Something went wrong on our end.</p>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <h2 className="text-2xl font-bold mb-4">Something went wrong!</h2>
+      <Button onClick={() => reset()}>Try again</Button>
     </div>
   );
 } 

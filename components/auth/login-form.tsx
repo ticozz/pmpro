@@ -7,47 +7,47 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import Link from 'next/link';
 import { motion, AnimatePresence } from "framer-motion";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { AnalyticsEvents } from "@/lib/analytics";
+import { signIn } from "next-auth/react";
+import { DEFAULT_ROLES } from '@/types/rbac';
 
 export function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { track } = useAnalytics();
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
 
-    const formData = new FormData(event.currentTarget);
-    
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.get('email'),
-          password: formData.get('password'),
-        }),
+      const formData = new FormData(event.currentTarget);
+      const email = formData.get('email') as string;
+      const password = formData.get('password') as string;
+      
+      console.log('Attempting sign in...');
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       });
 
-      const data = await response.json();
+      console.log('Sign in result:', result);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to sign in');
+      if (result?.error) {
+        throw new Error(result.error);
       }
 
-      // Store user data in sessionStorage
-      sessionStorage.setItem('user', JSON.stringify(data.user));
-      
-      // Set default sidebar state if it doesn't exist
-      if (!localStorage.getItem('sidebarExpanded')) {
-        localStorage.setItem('sidebarExpanded', 'true');
-      }
+      if (result?.ok) {
+        // Track successful login
+        await track(AnalyticsEvents.USER.LOGIN, { email });
 
-      router.push('/dashboard');
-      router.refresh();
+        // Force a hard redirect
+        window.location.href = '/admin'; // For SUPERADMIN
+      }
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'An error occurred');
@@ -96,7 +96,7 @@ export function LoginForm() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              <Alert variant="error" title="Error">
+              <Alert variant="destructive">
                 {error}
               </Alert>
             </motion.div>

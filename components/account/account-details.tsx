@@ -128,6 +128,16 @@ export function AccountDetails() {
                 </FormItem>
               )}
             />
+            <FormItem>
+              <FormLabel>Organization</FormLabel>
+              <FormControl>
+                <Input 
+                  value={user?.organization?.name || 'No Organization'} 
+                  disabled 
+                  className="bg-muted"
+                />
+              </FormControl>
+            </FormItem>
             <div className="flex justify-end">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? 'Saving...' : 'Save Changes'}

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { checkPermission } from "@/lib/auth/permissions";
-import { Permission } from "@/types/rbac";
+import { Permission, DEFAULT_ROLES } from "@/types/rbac";
+import { UserRole } from "@prisma/client";
 
 type Handler = () => Promise<NextResponse>;
 
@@ -15,6 +16,10 @@ export async function withAuth(
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (session.user.role === DEFAULT_ROLES.SUPERADMIN) {
+      return handler();
     }
 
     if (requiredPermission) {

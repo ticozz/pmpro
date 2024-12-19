@@ -1,7 +1,9 @@
 import { Permission, RoleType, DEFAULT_ROLES } from "../types/rbac";
 
 export const ROLE_PERMISSIONS: Record<RoleType, Permission[]> = {
-  [DEFAULT_ROLES.OWNER]: [
+  [DEFAULT_ROLES.SUPERADMIN]: [
+    "system.manage",
+    "organizations.manage",
     "properties.view",
     "properties.create",
     "properties.edit",
@@ -37,7 +39,7 @@ export const ROLE_PERMISSIONS: Record<RoleType, Permission[]> = {
     "payments.create",
     "users.invite",
   ],
-  [DEFAULT_ROLES.PROPERTY_MANAGER]: [
+  [DEFAULT_ROLES.MANAGER]: [
     "properties.view",
     "properties.edit",
     "units.view",
@@ -55,5 +57,5 @@ export const ROLE_PERMISSIONS: Record<RoleType, Permission[]> = {
     "reports.view",
     "payments.view",
   ],
-  [DEFAULT_ROLES.VIEWER]: ["properties.view", "units.view", "leases.view"],
+  [DEFAULT_ROLES.USER]: ["properties.view", "units.view", "leases.view"],
 };

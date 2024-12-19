@@ -15,72 +15,85 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useSession } from "next-auth/react"
-import { signOut } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { User, Settings, LogOut, ChevronUp } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export function UserNav() {
   const { data: session } = useSession();
-  console.log("UserNav - Session Data:", session);
-  const router = useRouter();
+  const user = session?.user;
 
-  const getInitials = () => {
-    if (!session?.user) return 'U';
-    return `${session.user.firstName?.[0] || ''}${session.user.lastName?.[0] || ''}`.toUpperCase();
-  };
-
-  const handleLogout = async () => {
-    await signOut({ redirect: true, callbackUrl: '/auth/login' });
+  const handleSignOut = async () => {
+    await signOut({ 
+      callbackUrl: '/auth/login',
+      redirect: true 
+    });
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10 border border-gray-200">
+        <Button 
+          variant="ghost" 
+          className={cn(
+            "relative gap-2 h-8",
+            "hover:bg-blue-50 hover:text-blue-700"
+          )}
+        >
+          <Avatar className="h-6 w-6">
             <AvatarImage 
               src="/avatars/default.svg" 
-              alt={session?.user?.firstName || 'User'} 
+              alt={user?.firstName || 'User'} 
               onError={(e) => {
                 e.currentTarget.src = '/avatars/default.svg';
               }}
             />
-            <AvatarFallback className="bg-blue-50 text-blue-600 font-medium">
-              {getInitials()}
+            <AvatarFallback className="bg-blue-50 text-blue-700">
+              {user?.firstName?.[0]}
+              {user?.lastName?.[0]}
             </AvatarFallback>
           </Avatar>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {user?.firstName} {user?.lastName}
+            </span>
+            <ChevronUp className="h-4 w-4 opacity-50" />
+          </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64" align="end">
-        <DropdownMenuLabel className="font-normal p-4 pb-2">
-          <div className="flex flex-col space-y-2">
-            <p className="text-sm font-medium">
-              {session?.user?.firstName} {session?.user?.lastName}
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">
+              {user?.firstName} {user?.lastName}
             </p>
-            <p className="text-xs text-muted-foreground truncate">
-              {session?.user?.email}
+            <p className="text-xs leading-none text-muted-foreground">
+              {user?.email}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup className="p-1">
-          <DropdownMenuItem asChild>
-            <Link href="/account">Account</Link>
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild className="hover:bg-blue-50 hover:text-blue-700">
+            <Link href="/dashboard/account">
+              <User className="mr-2 h-4 w-4" />
+              <span>Account</span>
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem className="py-2 cursor-pointer">
-            Settings
+          <DropdownMenuItem className="hover:bg-blue-50 hover:text-blue-700">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Settings</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <div className="p-1">
-          <DropdownMenuItem 
-            className="py-2 text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
-            onClick={handleLogout}
-          >
-            Sign out
-          </DropdownMenuItem>
-        </div>
+        <DropdownMenuItem 
+          onClick={handleSignOut}
+          className="hover:bg-blue-50 hover:text-blue-700"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Sign out</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

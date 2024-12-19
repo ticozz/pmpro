@@ -9,73 +9,37 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  output: "standalone",
   experimental: {
     optimizeCss: false,
   },
-  compiler: {
-    removeConsole: process.env.NODE_ENV === "production",
-  },
-  webpack: (config, { dev, isServer }) => {
-    if (!dev && !isServer) {
-      config.plugins.push(
-        new CompressionPlugin({
-          algorithm: "gzip",
-          test: /\.(js|css|html|svg)$/,
-          threshold: 10240,
-          minRatio: 0.8,
-        })
-      );
-
-      config.optimization = {
-        ...config.optimization,
-        moduleIds: "deterministic",
-        splitChunks: {
-          chunks: "all",
-          minSize: 50000,
-          maxSize: 200000,
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            framework: {
-              chunks: "all",
-              name: "framework",
-              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler|next|@next)[\\/]/,
-              priority: 40,
-              enforce: true,
-              reuseExistingChunk: true,
-            },
-            commons: {
-              name: "commons",
-              chunks: "initial",
-              minChunks: 2,
-              priority: 20,
-              reuseExistingChunk: true,
-            },
-            lib: {
-              test: /[\\/]node_modules[\\/]/,
-              name(module, chunks, cacheGroupKey) {
-                const moduleFileName = module
-                  .identifier()
-                  .split("/")
-                  .reduceRight((item) => item);
-                return `${cacheGroupKey}-${moduleFileName}`;
-              },
-              priority: 30,
-              minChunks: 2,
-              reuseExistingChunk: true,
-            },
-          },
-        },
-      };
-    }
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@": ".",
+    };
     return config;
   },
-  logging: {
-    fetches: {
-      fullUrl: true,
-    },
+  optimizeFonts: true,
+  async headers() {
+    return [
+      {
+        source: "/api/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Credentials", value: "true" },
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET,DELETE,PATCH,POST,PUT",
+          },
+          {
+            key: "Access-Control-Allow-Headers",
+            value:
+              "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
+          },
+        ],
+      },
+    ];
   },
 };
 
-module.exports = withBundleAnalyzer(nextConfig);
+module.exports = nextConfig;

@@ -42,7 +42,7 @@ async function main() {
       data: {
         organizationId: organization.id,
         userId: adminUser.id,
-        role: DEFAULT_ROLES.OWNER,
+        role: DEFAULT_ROLES.ADMIN,
       },
     });
 

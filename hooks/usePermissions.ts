@@ -1,26 +1,15 @@
 import { useSession } from "next-auth/react";
-import { useOrganization } from "@/hooks/useOrganization";
-import { Permission, RoleType } from "@/types/rbac";
-import { ROLE_PERMISSIONS } from "@/config/permissions";
-import { UserRole } from "@prisma/client";
+import { Permission } from "@/types/rbac";
 
 export function usePermissions() {
   const { data: session } = useSession();
-  const { organization } = useOrganization();
 
-  const hasPermission = (permission: Permission): boolean => {
-    if (!session?.user || !organization) return false;
+  const hasPermission = (requiredRole: Permission): boolean => {
+    console.log("usePermissions - Current user role:", session?.user?.role);
+    console.log("usePermissions - Required role:", requiredRole);
 
-    const userRole = session.user.role;
-    if (!userRole) return false;
-
-    const permissions = ROLE_PERMISSIONS[userRole as RoleType];
-    return permissions.includes(permission);
+    return session?.user?.role === requiredRole;
   };
 
-  return {
-    hasPermission,
-    isOwner: organization ? session?.user?.role === UserRole.ADMIN : false,
-    isAdmin: organization ? session?.user?.role === UserRole.ADMIN : false,
-  };
+  return { hasPermission };
 }

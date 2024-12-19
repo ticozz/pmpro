@@ -1,4 +1,4 @@
-import { OrgType } from "@prisma/client";
+export type OrgType = "PERSONAL" | "BUSINESS" | "ENTERPRISE";
 
 export interface Organization {
   id: string;

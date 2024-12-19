@@ -1,57 +1,58 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
-import { AlertCircle, CheckCircle, Info, XCircle } from 'lucide-react';
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
-const variants = {
-  default: 'bg-blue-50 text-blue-800',
-  error: 'bg-red-50 text-red-800',
-  warning: 'bg-yellow-50 text-yellow-800',
-  success: 'bg-green-50 text-green-800',
-};
+const alertVariants = cva(
+  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+  {
+    variants: {
+      variant: {
+        default: "bg-background text-foreground",
+        destructive:
+          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+);
 
-const icons = {
-  default: Info,
-  error: XCircle,
-  warning: AlertCircle,
-  success: CheckCircle,
-};
+const Alert = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
+>(({ className, variant, ...props }, ref) => (
+  <div
+    ref={ref}
+    role="alert"
+    className={cn(alertVariants({ variant }), className)}
+    {...props}
+  />
+));
+Alert.displayName = "Alert";
 
-interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: keyof typeof variants;
-  title?: string;
-}
+const AlertTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h5
+    ref={ref}
+    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+    {...props}
+  />
+));
+AlertTitle.displayName = "AlertTitle";
 
-export function Alert({
-  className,
-  variant = 'default',
-  title,
-  children,
-  ...props
-}: AlertProps) {
-  const Icon = icons[variant];
+const AlertDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("text-sm [&_p]:leading-relaxed", className)}
+    {...props}
+  />
+));
+AlertDescription.displayName = "AlertDescription";
 
-  return (
-    <div
-      className={cn(
-        'rounded-md p-4',
-        variants[variant],
-        className
-      )}
-      {...props}
-    >
-      <div className="flex">
-        <div className="flex-shrink-0">
-          <Icon className="h-5 w-5" />
-        </div>
-        <div className="ml-3">
-          {title && (
-            <h3 className="text-sm font-medium">{title}</h3>
-          )}
-          {children && (
-            <div className="text-sm mt-1">{children}</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-} 
+export { Alert, AlertTitle, AlertDescription }; 

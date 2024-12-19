@@ -1,4 +1,6 @@
 export type Permission =
+  | "system.manage"
+  | "organizations.manage"
   | "properties.view"
   | "properties.create"
   | "properties.edit"
@@ -26,11 +28,11 @@ export type Role = {
 };
 
 export const DEFAULT_ROLES = {
-  OWNER: "owner",
-  ADMIN: "admin",
-  PROPERTY_MANAGER: "property_manager",
-  STAFF: "staff",
-  VIEWER: "viewer",
+  SUPERADMIN: "SUPERADMIN",
+  ADMIN: "ADMIN",
+  MANAGER: "MANAGER",
+  STAFF: "STAFF",
+  USER: "USER",
 } as const;
 
-export type RoleType = (typeof DEFAULT_ROLES)[keyof typeof DEFAULT_ROLES];
+export type RoleType = keyof typeof DEFAULT_ROLES;

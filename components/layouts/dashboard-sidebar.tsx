@@ -20,7 +20,8 @@ import {
   Hammer,
   BarChart3,
   Banknote,
-  LucideIcon
+  LucideIcon,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,14 +50,14 @@ interface Route {
 
 export function Sidebar({ open, onOpenChange }: SidebarProps) {
   const pathname = usePathname();
-  const { isOpen, setIsOpen } = useSidebar();
+  const { isExpanded, toggleSidebar } = useSidebar();
   const { user, isLoading } = useUser();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const sidebarRef = useRef<HTMLElement>(null);
   const itemRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
-  const isOpenValue = open ?? isOpen;
-  const setIsOpenValue = onOpenChange ?? setIsOpen;
+  const isOpenValue = open ?? isExpanded;
+  const setIsOpenValue = onOpenChange ?? toggleSidebar;
 
   const toggleSubmenu = (itemName: string) => {
     setExpandedItems(prev => 
@@ -80,6 +81,25 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
       name: "Properties",
       href: "/dashboard/properties",
       icon: Building2
+    },
+    {
+      name: "Leases",
+      href: "/dashboard/leases",
+      icon: FileText,
+      submenu: [
+        { 
+          name: "All Leases", 
+          href: "/dashboard/leases" 
+        },
+        { 
+          name: "Create Lease", 
+          href: "/dashboard/leases/create" 
+        },
+        { 
+          name: "Renewals", 
+          href: "/dashboard/leases/renewals" 
+        }
+      ]
     },
     {
       name: "Accounting",
@@ -123,7 +143,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
       name: "Analytics",
       href: "/dashboard/analytics",
       icon: BarChart3
-    }
+    },
   ];
 
   const handleSignOut = async () => {
@@ -323,7 +343,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
                   <div className={designSystem.dropdown.content.inner}>
                     <DropdownMenuItem asChild>
                       <Link 
-                        href="/account"
+                        href="/dashboard/account"
                         className={cn(
                           designSystem.dropdown.content.item.base,
                           designSystem.dropdown.content.item.hover
@@ -386,7 +406,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
                 <div className={designSystem.dropdown.content.inner}>
                   <DropdownMenuItem asChild>
                     <Link 
-                      href="/account"
+                      href="/dashboard/account"
                       className={cn(
                         designSystem.dropdown.content.item.base,
                         designSystem.dropdown.content.item.hover

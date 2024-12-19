@@ -1,41 +1,47 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/index";
 
-export const dynamic = "force-dynamic";
-
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email) {
-      return new NextResponse(JSON.stringify({ error: "Not authenticated" }), {
-        status: 401,
-      });
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: {
+        id: session.user.id,
+      },
       select: {
         id: true,
         email: true,
         firstName: true,
         lastName: true,
         role: true,
+        createdAt: true,
+        updatedAt: true,
+        organizationId: true,
+        organization: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
     if (!user) {
-      return new NextResponse(JSON.stringify({ error: "User not found" }), {
-        status: 404,
-      });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error("Error fetching user:", error);
-    return new NextResponse(
-      JSON.stringify({ error: "Internal server error" }),
+    console.error("[USER_GET]", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

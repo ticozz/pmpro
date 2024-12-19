@@ -9,6 +9,7 @@ import { OrganizationSwitcher } from '@/components/layouts/OrganizationSwitcher'
 import { designSystem } from '@/lib/design-system'
 import { cn } from '@/lib/utils'
 
+
 export function DashboardHeaderClient() {
   const { setIsOpen } = useSidebar();
 

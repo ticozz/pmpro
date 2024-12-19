@@ -24,9 +24,13 @@ model User {
   tasks              Task[] // Assigned tasks
   notifications      Notification[]
   maintenanceOrders  MaintenanceRequest[]
+  tenantNotes        TenantNote[]
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   OrganizationMember OrganizationMember[]
+  auditLogs          AuditLog[]
+  lastLoginAt        DateTime?
+  AnalyticsEvent     AnalyticsEvent[]
 }
 
 model Organization {
@@ -35,13 +39,15 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members     OrganizationMember[]
-  properties  Property[]
-  units       Unit[]
-  leases      Lease[]
-  reports     Report[]
-  User        User[]
-  BankAccount BankAccount[]
+  members        OrganizationMember[]
+  properties     Property[]
+  units          Unit[]
+  leases         Lease[]
+  reports        Report[]
+  User           User[]
+  BankAccount    BankAccount[]
+  Subscription   Subscription[]
+  AnalyticsEvent AnalyticsEvent[]
 
   @@map("organizations")
 }
@@ -76,7 +82,7 @@ model Property {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  managedBy      User[]       @relation("PropertyManager")
+  managedBy    User[]             @relation("PropertyManager")
   financials   PropertyFinancial?
   tasks        Task[]
   documents    Document[]
@@ -133,6 +139,7 @@ model Tenant {
   documents  Document[]
   payments   Payment[]
   background BackgroundCheck?
+  notes      TenantNote[]
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
 }
@@ -377,9 +384,9 @@ model Address {
 
 // Enums
 enum UserRole {
+  SUPERADMIN
   ADMIN
   MANAGER
-  STAFF
   USER
 }
 
@@ -598,4 +605,97 @@ enum ReportType {
   OCCUPANCY
   MAINTENANCE
   CUSTOM
+}
+
+// Add these models for pricing and system settings
+
+model PricingPlan {
+  id            String           @id @default(cuid())
+  name          String
+  description   String?
+  price         Float
+  billingPeriod BillingPeriod
+  isPopular     Boolean          @default(false)
+  features      PricingFeature[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  Subscription  Subscription[]
+}
+
+model PricingFeature {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  included    Boolean     @default(false)
+  planId      String
+  plan        PricingPlan @relation(fields: [planId], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  type        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum BillingPeriod {
+  MONTHLY
+  YEARLY
+}
+
+// Add audit log tracking
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  details   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+// Add these models for analytics and subscriptions
+model Subscription {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  status         String // "ACTIVE", "CANCELLED", "EXPIRED"
+  amount         Float
+  planId         String?
+  plan           PricingPlan? @relation(fields: [planId], references: [id])
+  startDate      DateTime
+  endDate        DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+// Add analytics tracking
+model AnalyticsEvent {
+  id             String        @id @default(cuid())
+  name           String
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id])
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+}
+
+model TenantNote {
+  id          String   @id @default(cuid())
+  content     String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId    String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([createdById])
 }
