@@ -9,7 +9,7 @@ import { Status } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SelectSearch } from '@/components/ui/select-search';
-import { countries } from 'countries-list';
+import { countryOptions } from '@/lib/ui/country-options';
 import {
   Form,
   FormControl,
@@ -46,13 +46,6 @@ const formSchema = z.object({
     country: z.string().min(1, "Country is required"),
   }),
 });
-
-const countryOptions = Object.entries(countries)
-  .map(([code, country]) => ({
-    value: code,
-    label: country.name
-  }))
-  .sort((a, b) => a.label.localeCompare(b.label));
 
 type FormValues = z.infer<typeof formSchema>;
 

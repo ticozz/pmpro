@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { TenantFilters } from './tenant-filters';
 
 interface Tenant {
   id: string;
@@ -34,6 +35,8 @@ interface Tenant {
 export function TenantList() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     const fetchTenants = async () => {
@@ -52,6 +55,15 @@ export function TenantList() {
     fetchTenants();
   }, []);
 
+  const filteredTenants = tenants.filter(tenant => {
+    const matchesSearch = 
+      `${tenant.firstName} ${tenant.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tenant.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || tenant.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -60,6 +72,13 @@ export function TenantList() {
           <Button>Add Tenant</Button>
         </Link>
       </div>
+
+      <TenantFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+      />
 
       <div className="rounded-md border">
         <Table>
@@ -74,7 +93,7 @@ export function TenantList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tenants.map((tenant) => (
+            {filteredTenants.map((tenant) => (
               <TableRow key={tenant.id}>
                 <TableCell>
                   {tenant.firstName} {tenant.lastName}

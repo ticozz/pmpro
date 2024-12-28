@@ -17,6 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { LeaseStatusService } from "@/lib/services/lease-status";
+import { LeaseStatus } from "@prisma/client";
 
 interface LeaseDetailsProps {
   id: string;
@@ -41,6 +43,7 @@ interface Lease {
     firstName: string;
     lastName: string;
   }[];
+  organizationId: string;
 }
 
 export function LeaseDetails({ id }: LeaseDetailsProps) {
@@ -52,6 +55,24 @@ export function LeaseDetails({ id }: LeaseDetailsProps) {
     fetchLease();
   }, [id]);
 
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (lease) {
+        const currentStatus = await LeaseStatusService.getLeaseStatus({
+          startDate: lease.startDate,
+          endDate: lease.endDate,
+          organizationId: lease.organizationId || '',
+        });
+        if (currentStatus !== lease.status) {
+          // Update lease status in UI and database
+          await updateLeaseStatus(lease.id, currentStatus);
+        }
+      }
+    };
+
+    checkStatus();
+  }, [lease]);
+
   const fetchLease = async () => {
     try {
       const response = await fetch(`/api/leases/${id}`);
@@ -62,6 +83,24 @@ export function LeaseDetails({ id }: LeaseDetailsProps) {
       toast.error("Error fetching lease details");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const updateLeaseStatus = async (leaseId: string, status: LeaseStatus) => {
+    try {
+      const response = await fetch(`/api/leases/${leaseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      
+      if (!response.ok) throw new Error();
+      
+      // Update UI
+      setLease(prev => prev ? { ...prev, status } : null);
+      toast.success("Lease status updated");
+    } catch (error) {
+      toast.error("Failed to update lease status");
     }
   };
 

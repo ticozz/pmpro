@@ -1,29 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { handleAPIError, APIError } from "@/lib/api-error";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
-export async function GET(req: NextRequest) {
+export async function GET() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      throw new APIError("Unauthorized", 401);
-    }
-
-    const searchParams = new URL(req.url).searchParams;
-    const includeUnits = searchParams.get("include") === "units";
-
     const properties = await prisma.property.findMany({
       where: {
         organizationId: session.user.organizationId,
       },
       include: {
-        _count: {
-          select: {
-            units: true,
-          },
-        },
+        units: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -32,6 +26,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(properties);
   } catch (error) {
-    return handleAPIError(error);
+    console.error("Error fetching properties:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

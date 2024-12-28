@@ -1,12 +1,21 @@
 "use client";
 
-import { AuthSessionProvider } from "./session-provider";
+import { type ReactNode } from 'react';
+import { SessionProvider } from "next-auth/react";
+import { AuthProvider } from "./auth-provider";
+import { SidebarProvider } from "./sidebar-provider";
 import { LanguageProvider } from "@/contexts/language-context";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: ReactNode }) {
   return (
-    <AuthSessionProvider>
-      <LanguageProvider>{children}</LanguageProvider>
-    </AuthSessionProvider>
+    <LanguageProvider>
+      <SessionProvider>
+        <AuthProvider>
+          <SidebarProvider>
+            {children}
+          </SidebarProvider>
+        </AuthProvider>
+      </SessionProvider>
+    </LanguageProvider>
   );
 } 

@@ -6,10 +6,12 @@ import * as z from 'zod';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Selectui, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+import { useAuthContext } from '@/components/providers/auth-provider';
+import { Select } from '@radix-ui/react-select';
 
 const maintenanceSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -33,6 +35,7 @@ interface MaintenanceFormProps {
 export function MaintenanceForm({ initialData, units, staff, isEditing }: MaintenanceFormProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const router = useRouter();
+  const { user } = useAuthContext();
 
   const { register, handleSubmit, formState: { errors }, control } = useForm<MaintenanceFormData>({
     resolver: zodResolver(maintenanceSchema),
@@ -71,7 +74,7 @@ export function MaintenanceForm({ initialData, units, staff, isEditing }: Mainte
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Priority</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Selectui onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select priority" />
@@ -89,7 +92,7 @@ export function MaintenanceForm({ initialData, units, staff, isEditing }: Mainte
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </Selectui>
                   <FormMessage />
                 </FormItem>
               )}
@@ -100,7 +103,7 @@ export function MaintenanceForm({ initialData, units, staff, isEditing }: Mainte
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Selectui onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
@@ -120,7 +123,7 @@ export function MaintenanceForm({ initialData, units, staff, isEditing }: Mainte
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </Selectui>
                   <FormMessage />
                 </FormItem>
               )}
@@ -134,7 +137,7 @@ export function MaintenanceForm({ initialData, units, staff, isEditing }: Mainte
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Unit</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Selectui onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select unit" />
@@ -147,7 +150,7 @@ export function MaintenanceForm({ initialData, units, staff, isEditing }: Mainte
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </Selectui>
                   <FormMessage />
                 </FormItem>
               )}
@@ -158,7 +161,7 @@ export function MaintenanceForm({ initialData, units, staff, isEditing }: Mainte
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Assign To</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Selectui onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select staff" />
@@ -172,7 +175,7 @@ export function MaintenanceForm({ initialData, units, staff, isEditing }: Mainte
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </Selectui>
                   <FormMessage />
                 </FormItem>
               )}

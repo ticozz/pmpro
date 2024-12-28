@@ -34,17 +34,17 @@ import { Plus } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-const unitSchema = z.object({
+const formSchema = z.object({
   unitNumber: z.string().min(1, "Unit number is required"),
   type: z.string().min(1, "Unit type is required"),
-  size: z.coerce.number().min(1, "Size is required"),
-  rent: z.coerce.number().min(0, "Rent must be 0 or greater"),
-  status: z.enum(["VACANT", "OCCUPIED", "MAINTENANCE"]),
-  bedrooms: z.coerce.number().optional(),
-  bathrooms: z.coerce.number().optional(),
+  bedrooms: z.number().min(0, "Must be 0 or greater"),
+  bathrooms: z.number().min(0, "Must be 0 or greater"),
+  size: z.number().min(0, "Must be 0 or greater"),
+  rent: z.number().min(0, "Must be 0 or greater"),
+  features: z.array(z.string()).default([]),
 });
 
-type UnitFormValues = z.infer<typeof unitSchema>;
+type UnitFormValues = z.infer<typeof formSchema>;
 
 interface UnitFormProps {
   propertyId: string;
@@ -55,26 +55,31 @@ export function UnitForm({ propertyId, onSuccess }: UnitFormProps) {
   const [open, setOpen] = useState(false);
   console.log('UnitForm propertyId:', propertyId);
 
-  const form = useForm<UnitFormValues>({
-    resolver: zodResolver(unitSchema),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       unitNumber: "",
       type: "",
+      bedrooms: 0,
+      bathrooms: 0,
       size: 0,
       rent: 0,
-      status: "VACANT",
+      features: [],
     },
   });
 
   const router = useRouter();
 
-  async function onSubmit(data: UnitFormValues) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     try {
       console.log("Submitting unit data:", data);
       const response = await fetch(`/api/properties/${propertyId}/units`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          status: 'VACANT',
+        }),
       });
 
       console.log("Response status:", response.status);
@@ -135,44 +140,34 @@ export function UnitForm({ propertyId, onSuccess }: UnitFormProps) {
               />
               <FormField
                 control={form.control}
-                name="type"
+                name="bedrooms"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
-                    <Selectui onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className={cn(
-                          "border-input bg-background",
-                          designSystem.effects.blur
-                        )}>
-                          <SelectValue placeholder="Select unit type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className={cn(
-                        designSystem.dropdown.content.base,
-                        "min-w-[8rem]"
-                      )}>
-                        <div className={designSystem.dropdown.content.inner}>
-                          {[
-                            { value: "STUDIO", label: "Studio" },
-                            { value: "1BR", label: "1 Bedroom" },
-                            { value: "2BR", label: "2 Bedroom" },
-                            { value: "3BR", label: "3 Bedroom" },
-                          ].map((option) => (
-                            <SelectItem
-                              key={option.value}
-                              value={option.value}
-                              className={cn(
-                                designSystem.dropdown.content.item.base,
-                                designSystem.dropdown.content.item.hover
-                              )}
-                            >
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </div>
-                      </SelectContent>
-                    </Selectui>
+                    <FormLabel>Bedrooms</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        onChange={e => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="bathrooms"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bathrooms</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field}
+                        onChange={e => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -199,49 +194,6 @@ export function UnitForm({ propertyId, onSuccess }: UnitFormProps) {
                     <FormControl>
                       <Input type="number" {...field} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Selectui onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className={cn(
-                          "border-input bg-background",
-                          designSystem.effects.blur
-                        )}>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className={cn(
-                        designSystem.dropdown.content.base,
-                        "min-w-[8rem]"
-                      )}>
-                        <div className={designSystem.dropdown.content.inner}>
-                          {[
-                            { value: "VACANT", label: "Vacant" },
-                            { value: "OCCUPIED", label: "Occupied" },
-                            { value: "MAINTENANCE", label: "Maintenance" },
-                          ].map((option) => (
-                            <SelectItem
-                              key={option.value}
-                              value={option.value}
-                              className={cn(
-                                designSystem.dropdown.content.item.base,
-                                designSystem.dropdown.content.item.hover
-                              )}
-                            >
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </div>
-                      </SelectContent>
-                    </Selectui>
                     <FormMessage />
                   </FormItem>
                 )}

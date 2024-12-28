@@ -1,40 +1,36 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-
+import { useLanguage } from '@/contexts/language-context';
+import { translations } from '@/lib/i18n/translations';
 export function Hero() {
+  const { language } = useLanguage();
+
   return (
-    <div className="relative bg-white">
-      <div className="mx-auto max-w-7xl lg:grid lg:grid-cols-12 lg:gap-x-8 lg:px-8">
-        <div className="px-6 pb-24 pt-10 sm:pb-32 lg:col-span-7 lg:px-0 lg:pb-56 lg:pt-48 xl:col-span-6">
-          <div className="mx-auto max-w-2xl lg:mx-0">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-              Property Management Made Simple
-            </h1>
-            <p className="mt-6 text-lg leading-8 text-gray-600">
-              Streamline your property management workflow with our comprehensive solution. 
-              From tenant screening to maintenance requests, we've got you covered.
-            </p>
-            <div className="mt-10 flex items-center gap-x-6">
-              <Button size="lg">Get Started</Button>
-              <Link href="/contact" className="text-sm font-semibold leading-6 text-gray-900">
-                Contact Sales <span aria-hidden="true">→</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-        <div className="relative lg:col-span-5 lg:-mr-8 xl:absolute xl:inset-0 xl:left-1/2 xl:mr-0">
-          <Image
-            className="aspect-[3/2] w-full bg-gray-50 object-cover lg:absolute lg:inset-0 lg:aspect-auto lg:h-full"
-            src="/images/hero.jpg"
-            alt="Property Management"
-            width={1000}
-            height={1000}
-            priority
-          />
-        </div>
+    <section className="container space-y-6 py-8 md:py-12 lg:py-24">
+      <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-4 text-center">
+        <h1 className="font-heading text-3xl leading-[1.1] sm:text-5xl md:text-6xl">
+          {language["hero.title"] || "Property Management Simplified"}
+        </h1>
+        <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
+          {translations.en["hero.description"] || "Streamline your property management workflow with our comprehensive solution. From tenant screening to maintenance requests, we've got you covered."}
+        </p>
       </div>
-    </div>
+
+      <div className="mx-auto flex justify-center space-x-4">
+        <Link href="/auth/register">
+          <Button size="lg" className="h-11 px-8">
+            {language["hero.getStarted"] || "Get Started"}
+          </Button>
+        </Link>
+        <Link href="/auth/login">
+          <Button variant="outline" size="lg" className="h-11 px-8">
+            {language["hero.signIn"] || "Sign In"}
+          </Button>
+        </Link>
+      </div>
+    </section>
   );
 } 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 interface User {
   id: string;
@@ -13,19 +14,34 @@ interface User {
 export function useUser() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    const userStr = sessionStorage.getItem("user");
-    if (userStr) {
-      const userData = JSON.parse(userStr);
-      // Calculate initials from first and last name
-      const initials = `${userData.firstName?.[0] || ""}${
-        userData.lastName?.[0] || ""
-      }`.toUpperCase();
-      setUser({ ...userData, initials });
+    if (status === "loading") {
+      return;
     }
-    setIsLoading(false);
-  }, []);
 
-  return { user, isLoading };
+    if (session?.user) {
+      const userData = {
+        id: session.user.id,
+        firstName: session.user.firstName,
+        lastName: session.user.lastName,
+        email: session.user.email,
+        initials: `${session.user.firstName?.[0] || ""}${
+          session.user.lastName?.[0] || ""
+        }`.toUpperCase(),
+      };
+
+      // Update sessionStorage
+      sessionStorage.setItem("user", JSON.stringify(userData));
+      setUser(userData);
+    } else {
+      sessionStorage.removeItem("user");
+      setUser(null);
+    }
+
+    setIsLoading(false);
+  }, [session, status]);
+
+  return { user, isLoading: status === "loading" || isLoading };
 }

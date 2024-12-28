@@ -15,6 +15,7 @@ import { BuildingsPattern } from '@/components/ui/buildings-pattern';
 import { PlatformDemo } from "@/components/marketing/platform-demo";
 import { LanguageSelector } from '@/components/ui/language-selector';
 import { useLanguage } from '@/contexts/language-context';
+import { translations } from '@/lib/i18n/translations';
 
 // Keep only the BackgroundPattern since it's specific to the hero section
 const BackgroundPattern = () => (
@@ -46,61 +47,61 @@ const BackgroundPattern = () => (
 );
 
 export default function HomePage() {
-  const { translations } = useLanguage();
-
+  const { language } = useLanguage();
+  
   const features = [
     {
       icon: <BarChart3 className="h-6 w-6" />,
-      title: translations["features.analytics.title"],
-      description: translations["features.analytics.description"]
+      title: language["features.analytics.title"],
+      description: language["features.analytics.description"]
     },
     {
       icon: <Building2 className="h-6 w-6" />,
-      title: translations["features.property.title"],
-      description: translations["features.property.description"]
+      title: language["features.property.title"],
+      description: language["features.property.description"]
     },
     {
       icon: <Users className="h-6 w-6" />,
-      title: translations["features.tenant.title"],
-      description: translations["features.tenant.description"]
+      title: language["features.tenant.title"],
+      description: language["features.tenant.description"]
     },
     {
       icon: <Wallet className="h-6 w-6" />,
-      title: translations["features.financial.title"],
-      description: translations["features.financial.description"]
+      title: language["features.financial.title"],
+      description: language["features.financial.description"]
     },
     {
       icon: <ClipboardCheck className="h-6 w-6" />,
-      title: translations["features.maintenance.title"],
-      description: translations["features.maintenance.description"]
+      title: language["features.maintenance.title"],
+      description: language["features.maintenance.description"]
     },
     {
       icon: <Bell className="h-6 w-6" />,
-      title: translations["features.notifications.title"],
-      description: translations["features.notifications.description"]
+      title: language["features.notifications.title"],
+      description: language["features.notifications.description"]
     }
   ];
 
   const pricingPlans = [
     {
-      name: translations["pricing.basic.name"],
+      name: language["pricing.basic.name"],
       price: 29,
-      description: translations["pricing.basic.description"],
-      features: translations["pricing.basic.features"],
+      description: language["pricing.basic.description"],
+      features: language["pricing.basic.features"],
       highlighted: false
     },
     {
-      name: translations["pricing.pro.name"],
+      name: language["pricing.pro.name"],
       price: 79,
-      description: translations["pricing.pro.description"],
-      features: translations["pricing.pro.features"],
+      description: language["pricing.pro.description"],
+      features: language["pricing.pro.features"],
       highlighted: true
     },
     {
-      name: translations["pricing.enterprise.name"],
+      name: language["pricing.enterprise.name"],
       price: 199,
-      description: translations["pricing.enterprise.description"],
-      features: translations["pricing.enterprise.features"],
+      description: language["pricing.enterprise.description"],
+      features: language["pricing.enterprise.features"],
       highlighted: false
     }
   ];
@@ -119,10 +120,10 @@ export default function HomePage() {
             <div className="flex items-center space-x-4">
               <LanguageSelector />
               <Link href="/auth/login">
-                <Button variant="ghost">{translations['nav.signin']}</Button>
+                <Button variant="ghost">{translations.en['nav.signin']}</Button>
               </Link>
               <Link href="/auth/register">
-                <Button>{translations['nav.getStarted']}</Button>
+                <Button>{translations.en['nav.getStarted']}</Button>
               </Link>
             </div>
           </div>
@@ -135,15 +136,15 @@ export default function HomePage() {
         <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 z-10">
           <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              {translations['hero.title']}
+              {language['hero.title']}
             </h1>
             <p className="mt-6 text-lg text-gray-600 leading-8">
-              {translations['hero.description']}
+              {language['hero.description']}
             </p>
             <div className="mt-10">
               <Link href="/auth/register">
                 <Button size="lg" className="rounded-full px-8">
-                  {translations['hero.cta']}
+                  {language['hero.getStarted']}
                 </Button>
               </Link>
             </div>
@@ -232,10 +233,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              {translations["features.title"]}
+              {language["features.title"]}
             </h2>
             <p className="mt-4 text-lg text-gray-600">
-              {translations["features.subtitle"]}
+              {language["features.subtitle"]}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -260,10 +261,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              {translations["pricing.title"]}
+              {language["pricing.title"]}
             </h2>
             <p className="mt-4 text-lg text-gray-600">
-              {translations["pricing.subtitle"]}
+              {language["pricing.subtitle"]}
             </p>
           </div>
           
@@ -284,7 +285,7 @@ export default function HomePage() {
                 <div className="mt-6">
                   <span className="text-4xl font-bold">${plan.price}</span>
                   <span className={plan.highlighted ? 'text-blue-100' : 'text-gray-500'}>
-                    {translations["pricing.monthly"]}
+                    {language["pricing.monthly"]}
                   </span>
                 </div>
                 <ul className="mt-8 space-y-4">
@@ -304,7 +305,7 @@ export default function HomePage() {
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
-                  {translations["pricing.getStarted"]}
+                  {language["pricing.getStarted"]}
                 </Button>
               </div>
             ))}

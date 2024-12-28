@@ -1,21 +1,57 @@
-import { prisma } from "./prisma";
+import { prisma } from "@/lib/prisma";
+import { validateAuthSession } from "../lib/auth";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function verifyOrganizationAccess(
-  userId: string,
+export async function getOrganization(
+  request: NextRequest,
   organizationId: string
 ) {
-  const user = await prisma.user.findFirst({
-    where: {
-      id: userId,
-      organizationId: organizationId,
-    },
-  });
+  try {
+    const session = await validateAuthSession(request);
 
-  return !!user;
-}
+    const organization = await prisma.organization.findUnique({
+      where: {
+        id: organizationId,
+      },
+      include: {
+        members: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
 
-export async function setOrganizationContext(organizationId: string) {
-  // If using Prisma, you might want to extend the context
-  // If using raw SQL, you can set the RLS context here
-  return prisma.$executeRaw`SELECT set_config('app.current_organization_id', ${organizationId}, true)`;
+    if (!organization) {
+      return new NextResponse(
+        JSON.stringify({
+          status: "error",
+          message: "Organization not found",
+        }),
+        { status: 404 }
+      );
+    }
+
+    // Validate user belongs to organization
+    if (session.user.organizationId !== organizationId) {
+      return new NextResponse(
+        JSON.stringify({
+          status: "error",
+          message: "Unauthorized access to organization",
+        }),
+        { status: 403 }
+      );
+    }
+
+    return organization;
+  } catch (error) {
+    console.error("Organization fetch error:", error);
+    return new NextResponse(
+      JSON.stringify({
+        status: "error",
+        message: error instanceof Error ? error.message : "An error occurred",
+      }),
+      { status: 500 }
+    );
+  }
 }

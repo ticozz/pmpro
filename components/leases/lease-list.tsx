@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
+import { LeaseFilters } from './lease-filters';
 
 interface Lease {
   id: string;
@@ -49,6 +50,9 @@ function getStatusVariant(status: string): "success" | "warning" | "default" | "
 export function LeaseList() {
   const [leases, setLeases] = useState<Lease[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
 
   useEffect(() => {
     const fetchLeases = async () => {
@@ -67,6 +71,30 @@ export function LeaseList() {
     fetchLeases();
   }, []);
 
+  const filteredLeases = leases.filter(lease => {
+    const matchesSearch = 
+      lease.unit.property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lease.tenants.some(tenant => 
+        `${tenant.firstName} ${tenant.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    const matchesStatus = statusFilter === 'all' || lease.status === statusFilter;
+    const matchesType = typeFilter === 'all' || lease.type === typeFilter;
+    
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+  }, []);
+
+  const handleStatusChange = useCallback((value: string) => {
+    setStatusFilter(value);
+  }, []);
+
+  const handleTypeChange = useCallback((value: string) => {
+    setTypeFilter(value);
+  }, []);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -75,6 +103,15 @@ export function LeaseList() {
           <Button>Create Lease</Button>
         </Link>
       </div>
+
+      <LeaseFilters
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        statusFilter={statusFilter}
+        onStatusChange={handleStatusChange}
+        typeFilter={typeFilter}
+        onTypeChange={handleTypeChange}
+      />
 
       <div className="rounded-md border">
         <Table>
@@ -92,7 +129,7 @@ export function LeaseList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {leases.map((lease) => (
+            {filteredLeases.map((lease) => (
               <TableRow key={lease.id}>
                 <TableCell>{lease.unit.property.name}</TableCell>
                 <TableCell>{lease.unit.unitNumber}</TableCell>

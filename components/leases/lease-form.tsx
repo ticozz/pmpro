@@ -74,6 +74,9 @@ interface Property {
     id: string;
     unitNumber: string;
   }[];
+  type: string;
+  status: string;
+  organizationId: string;
 }
 
 interface TenantOption {
@@ -127,13 +130,23 @@ export function LeaseForm({ initialData, isEditing, onSuccess }: LeaseFormProps)
         const response = await fetch('/api/properties?include=units');
         if (!response.ok) throw new Error();
         const data = await response.json();
-        setProperties(data);
+        console.log("Fetched properties:", data);
+        
+        // Transform the data to ensure units are included
+        const propertiesWithUnits = data.map((property: any) => ({
+          ...property,
+          units: property.units || [] // Ensure units array exists
+        }));
+        
+        setProperties(propertiesWithUnits);
         
         if (initialData) {
-          const property = data.find((p: Property) => p.id === initialData.unit.property.id);
+          const property = propertiesWithUnits.find((p: Property) => p.id === initialData.unit.property.id);
+          console.log("Setting initial property:", property);
           setSelectedProperty(property || null);
         }
       } catch (error) {
+        console.error("Error fetching properties:", error);
         toast.error("Failed to load properties");
       }
     };
@@ -168,9 +181,12 @@ export function LeaseForm({ initialData, isEditing, onSuccess }: LeaseFormProps)
   }, [initialData, properties, form]);
 
   const handlePropertyChange = (propertyId: string) => {
+    console.log("Property changed to:", propertyId);
     const property = properties.find(p => p.id === propertyId);
+    console.log("Found property:", property);
+    console.log("Property units:", property?.units);
     setSelectedProperty(property || null);
-    form.setValue('unitId', ''); // Reset unit selection
+    form.setValue('unitId', '');
   };
 
   const onSubmit = async (data: LeaseFormValues) => {
@@ -185,27 +201,33 @@ export function LeaseForm({ initialData, isEditing, onSuccess }: LeaseFormProps)
         depositAmount: Number(data.depositAmount),
       };
       
-      const url = isEditing 
-        ? `/api/leases/${initialData.id}`
-        : "/api/leases";
+      console.log("Submitting lease data:", formattedData);
       
-      const method = isEditing ? "PATCH" : "POST";
-      
-      const response = await fetch(url, {
-        method,
+      const response = await fetch("/api/leases", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formattedData),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Failed to ${isEditing ? 'update' : 'create'} lease`);
+        // Handle specific error cases
+        if (responseData.error === 'Date range conflicts with existing leases') {
+          toast.error("Cannot create lease: The selected dates conflict with an existing lease for this unit. Please choose different dates.", {
+            duration: 5000,
+          });
+        } else {
+          toast.error(responseData.error || "Failed to create lease", {
+            duration: 5000,
+          });
+        }
+        return;
       }
       
-      const result = await response.json();
-      toast.success(`Lease ${isEditing ? 'updated' : 'created'} successfully`);
+      toast.success("Lease created successfully");
       
       if (onSuccess) {
         onSuccess();
@@ -214,8 +236,10 @@ export function LeaseForm({ initialData, isEditing, onSuccess }: LeaseFormProps)
       }
       
     } catch (error) {
-      console.error("Error:", error);
-      toast.error(error instanceof Error ? error.message : "An error occurred");
+      console.error("Error details:", error);
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred", {
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -273,11 +297,12 @@ export function LeaseForm({ initialData, isEditing, onSuccess }: LeaseFormProps)
                       handlePropertyChange(value);
                     }}
                     defaultValue={initialData?.unit.property.id}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select property">
-                          {properties.find(p => p.id === field.value)?.name}
+                          {properties.find(p => p.id === field.value)?.name || "Select property"}
                         </SelectValue>
                       </SelectTrigger>
                     </FormControl>
@@ -303,16 +328,17 @@ export function LeaseForm({ initialData, isEditing, onSuccess }: LeaseFormProps)
                   <Selectui
                     onValueChange={field.onChange}
                     defaultValue={initialData?.unit.id}
+                    disabled={!form.watch('propertyId')}
                   >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select unit">
-                          {selectedProperty?.units.find(u => u.id === field.value)?.unitNumber}
+                          {selectedProperty?.units?.find(u => u.id === field.value)?.unitNumber || "Select unit"}
                         </SelectValue>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {selectedProperty?.units.map((unit) => (
+                      {selectedProperty?.units?.map((unit) => (
                         <SelectItem key={unit.id} value={unit.id}>
                           {unit.unitNumber}
                         </SelectItem>

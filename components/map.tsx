@@ -20,6 +20,7 @@ const customIcon = new Icon({
 });
 
 export function Map({ center, markers = [] }: MapProps) {
+
   return (
     <MapContainer
       center={center}

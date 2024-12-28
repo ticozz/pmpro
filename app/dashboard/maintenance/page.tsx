@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { MaintenanceList } from '@/components/maintenance/maintenance-list'
 import { MaintenanceFilters } from '@/components/maintenance/maintenance-filters'
@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { designSystem } from '@/lib/design-system'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, RotateCw, CheckCircle2, AlertCircle } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 const stats = [
   {
@@ -45,6 +46,29 @@ const stats = [
 
 export default function MaintenancePage() {
   const router = useRouter()
+  const [properties, setProperties] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchProperties() {
+      try {
+        const response = await fetch('/api/properties')
+        if (!response.ok) throw new Error('Failed to fetch properties')
+        const data = await response.json()
+        setProperties(data)
+      } catch (error) {
+        console.error('Error fetching properties:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProperties()
+  }, [])
+
+  if (loading) {
+    return <div>Loading...</div>
+  }
 
   return (
     <div>
@@ -115,7 +139,11 @@ export default function MaintenancePage() {
         designSystem.effects.card,
         "p-6"
       )}>
-        <MaintenanceList />
+        {properties.length > 0 ? (
+          <MaintenanceList property={properties[0]} />
+        ) : (
+          <div>No properties found</div>
+        )}
       </div>
     </div>
   )

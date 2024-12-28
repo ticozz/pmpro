@@ -49,10 +49,33 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await req.json();
+
+    // Check if tenant with same first and last name exists in the same organization
+    const existingTenant = await prisma.tenant.findFirst({
+      where: {
+        AND: [
+          { firstName: data.firstName },
+          { lastName: data.lastName },
+          { organizationId: session.user.organizationId },
+        ],
+      },
+    });
+
+    if (existingTenant) {
+      return NextResponse.json(
+        { error: "A tenant with this name already exists" },
+        { status: 400 }
+      );
+    }
+
     const tenant = await prisma.tenant.create({
-      data,
-      include: {
-        leases: true,
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone || null,
+        status: data.status,
+        organizationId: session.user.organizationId,
       },
     });
 
@@ -60,7 +83,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[TENANT_CREATE]", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Failed to create tenant" },
       { status: 500 }
     );
   }

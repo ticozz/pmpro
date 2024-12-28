@@ -1,75 +1,31 @@
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useSession } from "next-auth/react";
+import { Session } from "next-auth";
 
-interface LoginCredentials {
+interface User {
+  id: string;
   email: string;
-  password: string;
-}
-
-interface RegisterCredentials {
   firstName: string;
   lastName: string;
-  email: string;
-  password: string;
+  role: string;
+  organizationId?: string;
 }
 
-export function useAuth() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+interface AuthState {
+  user: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+}
 
-  const login = async (credentials: LoginCredentials) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+export function useAuth(): AuthState {
+  const { data: session, status } = useSession();
 
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to login');
-      }
-
-      router.push('/dashboard');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const register = async (credentials: RegisterCredentials) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to register');
-      }
-
-      router.push('/auth/login?registered=true');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (status === "loading") {
+    return { user: null, isLoading: true, isAuthenticated: false };
+  }
 
   return {
-    login,
-    register,
-    isLoading,
-    error,
+    user: (session?.user as User) || null,
+    isLoading: false,
+    isAuthenticated: status === "authenticated",
   };
-} 
+}

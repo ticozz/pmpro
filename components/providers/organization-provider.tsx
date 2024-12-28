@@ -2,70 +2,56 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Organization } from "@prisma/client";
 
 interface OrganizationContextType {
-  organization: Organization | null;
+  organization: {
+    id: string;
+    name: string;
+  } | null;
+  organizations: Array<{
+    id: string;
+    name: string;
+  }>;
+  setCurrentOrganization: (org: { id: string; name: string }) => void;
   isLoading: boolean;
   error: Error | null;
-  setOrganization: (org: Organization | null) => void;
 }
 
 export const OrganizationContext = createContext<OrganizationContextType>({
   organization: null,
+  organizations: [],
+  setCurrentOrganization: () => {},
   isLoading: true,
-  error: null,
-  setOrganization: () => {},
+  error: null
 });
 
 export function OrganizationProvider({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession();
-  const [organization, setOrganization] = useState<Organization | null>(null);
+  const { data: session } = useSession();
+  const [organization, setOrganization] = useState<{ id: string; name: string } | null>(null);
+  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function fetchOrganization() {
-      if (!session?.user?.organizationId || status !== "authenticated") {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/organizations/${session.user.organizationId}`, {
-          credentials: 'include'
+    if (session?.user?.organizationId) {
+      fetch(`/api/organizations/${session.user.organizationId}`)
+        .then(res => res.json())
+        .then(data => {
+          setOrganization({ id: data.id, name: data.name });
         });
-        if (!res.ok) throw new Error("Failed to fetch organization");
-        const data = await res.json();
-        if (isMounted) {
-          setOrganization(data);
-          setIsLoading(false);
-        }
-      } catch (err) {
-        console.error("Error fetching organization:", err);
-        if (isMounted) {
-          setError(err instanceof Error ? err : new Error("Unknown error"));
-          setIsLoading(false);
-        }
-      }
+
+      fetch('/api/organizations')
+        .then(res => res.json())
+        .then(data => setOrganizations(data.map((org: any) => ({ id: org.id, name: org.name }))));
     }
-
-    fetchOrganization();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [session?.user?.organizationId, status]);
+  }, [session?.user?.organizationId]);
 
   const value = {
     organization,
+    organizations,
+    setCurrentOrganization: setOrganization,
     isLoading,
-    error,
-    setOrganization,
+    error
   };
 
   return (

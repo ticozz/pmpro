@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText, Download } from 'lucide-react';
+import { useAuthContext } from '@/components/providers/auth-provider';
 
 interface DocumentListProps {
   property: {
@@ -27,6 +28,8 @@ const documentTypes = {
 type DocumentType = keyof typeof documentTypes;
 
 export function DocumentList({ property }: DocumentListProps) {
+  const { user } = useAuthContext();
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">

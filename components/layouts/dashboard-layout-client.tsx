@@ -5,20 +5,20 @@ import { DashboardHeaderClient } from '@/components/layouts/dashboard-header-cli
 import { designSystem } from '@/lib/design-system'
 import { OrganizationProvider } from '@/components/providers/organization-provider'
 import { SidebarProvider } from '@/components/providers/sidebar-provider'
-import { useSession } from 'next-auth/react'
+import { useAuthContext } from '@/components/providers/auth-provider'
 
 export function DashboardLayoutClient({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { data: session, status } = useSession();
+  const { isLoading, isAuthenticated, user } = useAuthContext();
 
-  if (status === "loading") {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  if (!session) {
+  if (!isAuthenticated) {
     return null;
   }
 

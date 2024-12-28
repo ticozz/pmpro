@@ -1,54 +1,23 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { SelectSearch } from '@/components/ui/select-search';
-import { countries } from 'countries-list';
+import { useEffect } from "react";
+import { Form } from "../ui/form";
+import { FormField } from "../ui/form";
+import { FormItem } from "../ui/form";
+import { FormLabel } from "../ui/form";
+import { FormControl } from "../ui/form";
+import { FormMessage } from "../ui/form";
+import { Input } from "../ui/input";
+import { Selectui, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useAuthContext } from "../providers/auth-provider";
+import { Dialog, DialogTitle, DialogContent, DialogDescription } from "@radix-ui/react-dialog";
+import { DialogHeader } from "../ui/dialog";
+import { useState } from "react";
+import { z } from "zod";
+import { Button } from "../ui/button";
+import { SelectSearch } from "../ui/select-search";
+import { countryOptions } from '@/lib/ui/country-options';
 import { PropertyWithAddress } from '@/types/property';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Selectui,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  type: z.string().min(1, "Property type is required"),
-  managerId: z.string().min(1, "Property Manager is required"),
-  address: z.object({
-    street: z.string().min(1, "Street is required"),
-    city: z.string().min(1, "City is required"),
-    state: z.string().min(1, "State is required"),
-    zipCode: z.string().min(1, "ZIP code is required"),
-    country: z.string().min(1, "Country is required"),
-  }),
-});
-
-const countryOptions = Object.entries(countries).map(([code, country]) => ({
-  value: code,
-  label: country.name
-}));
 
 interface PropertyEditFormProps {
   property: PropertyWithAddress;
@@ -64,9 +33,23 @@ type Manager = {
   email: string;
 };
 
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  type: z.string().min(1, "Property type is required"),
+  managerId: z.string().min(1, "Property Manager is required"),
+  address: z.object({
+    street: z.string().min(1, "Street is required"),
+    city: z.string().min(1, "City is required"),
+    state: z.string().min(1, "State is required"),
+    zipCode: z.string().min(1, "ZIP code is required"),
+    country: z.string().min(1, "Country is required"),
+  }),
+});
+
 export function PropertyEditForm({ property, isOpen, onOpenChange, onSuccess }: PropertyEditFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [managers, setManagers] = useState<Manager[]>([]);
+  const { user } = useAuthContext();
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -258,7 +241,7 @@ export function PropertyEditForm({ property, isOpen, onOpenChange, onSuccess }: 
                         isSearchable={true}
                         isClearable={true}
                         placeholder="Search for a country..."
-                        value={field.value ? countryOptions.find(option => option.value === field.value) : null}
+                        value={field.value ? countryOptions.find((option: any) => option.value === field.value) : null}
                         onChange={(option: any) => field.onChange(option?.value || '')}
                       />
                       <FormMessage />

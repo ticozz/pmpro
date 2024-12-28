@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Selectui, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
 
 const tenantSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -46,24 +47,42 @@ export function TenantForm({ initialData, tenantId, onSuccess, onCancel }: Tenan
     },
   });
 
+  const router = useRouter();
+
   const handleSubmit = async (data: TenantFormValues) => {
     try {
-      const response = await fetch(
-        tenantId ? `/api/tenants/${tenantId}` : '/api/tenants',
-        {
-          method: tenantId ? 'PATCH' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      );
+      const response = await fetch('/api/tenants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
 
-      if (!response.ok) throw new Error();
-      onSuccess?.();
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error || "Failed to save tenant",
+        });
+        return;
+      }
+      
+      toast({
+        title: "Success",
+        description: "Tenant created successfully",
+      });
+      
+      // Redirect to tenants page
+      router.push('/dashboard/tenants');
+      router.refresh();
+      
     } catch (error) {
+      console.error('Tenant creation error:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to save tenant",
+        description: error instanceof Error ? error.message : "Failed to save tenant",
       });
     }
   };

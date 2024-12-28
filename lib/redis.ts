@@ -1,20 +1,35 @@
 import Redis from "ioredis";
 
-const globalForRedis = globalThis as unknown as {
-  redis: Redis | undefined;
-};
+let redis: Redis | null = null;
 
-// Only create Redis client in production or if URL exists
-export const redis: Redis | undefined =
-  globalForRedis.redis ??
-  (process.env.REDIS_URL && process.env.NODE_ENV === "production"
-    ? new Redis(process.env.REDIS_URL, {
-        maxRetriesPerRequest: 1,
-        connectTimeout: 500,
-        retryStrategy: (times) => Math.min(times * 50, 2000),
-      })
-    : undefined);
+// Only create Redis client if URL is provided
+if (process.env.REDIS_URL) {
+  try {
+    redis = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false,
+      retryStrategy: (times: number) => {
+        // Don't retry in development if Redis is not available
+        if (process.env.NODE_ENV === "development") {
+          return null;
+        }
+        if (times > 3) {
+          return null;
+        }
+        return Math.min(times * 50, 2000);
+      },
+    });
 
-if (process.env.NODE_ENV !== "production" && process.env.REDIS_URL) {
-  globalForRedis.redis = redis;
+    redis.on("error", (error: Error) => {
+      console.warn("Redis connection error:", error);
+      if (process.env.NODE_ENV === "development") {
+        redis = null;
+      }
+    });
+  } catch (error) {
+    console.warn("Redis initialization error:", error);
+    redis = null;
+  }
 }
+
+export default redis;

@@ -8,10 +8,11 @@ import { useSidebar } from '@/components/providers/sidebar-provider'
 import { OrganizationSwitcher } from '@/components/layouts/OrganizationSwitcher'
 import { designSystem } from '@/lib/design-system'
 import { cn } from '@/lib/utils'
-
+import { useAuthContext } from '@/components/providers/auth-provider'
 
 export function DashboardHeaderClient() {
   const { setIsOpen } = useSidebar();
+  const { user } = useAuthContext();
 
   const handleClick = () => {
     setIsOpen(true);
@@ -34,11 +35,11 @@ export function DashboardHeaderClient() {
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <OrganizationSwitcher />
+        {user && <OrganizationSwitcher />}
         <div className="flex-1">
           <Input 
-            type="search" 
-            placeholder="Search..." 
+            type="search"
+            placeholder="Search..."
             className={cn(
               "md:w-[200px] lg:w-[300px]",
               "bg-white/50",

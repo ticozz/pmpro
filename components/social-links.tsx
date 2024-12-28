@@ -25,6 +25,7 @@ const socialLinks = [
 ];
 
 export function SocialLinks() {
+
   return (
     <div className="flex space-x-4">
       {socialLinks.map((link) => (
