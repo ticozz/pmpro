@@ -20,8 +20,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    console.log(
+      "[LEASE_STATUS_UPDATE] Starting update for org:",
+      organizationId
+    );
     // Update lease statuses for the organization
     await LeaseStatusService.updateLeaseStatuses(organizationId);
+    console.log("[LEASE_STATUS_UPDATE] Update completed");
 
     return NextResponse.json({ success: true });
   } catch (error) {

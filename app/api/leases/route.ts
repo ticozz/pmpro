@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { LeaseValidationService } from "@/lib/services/lease-validation";
+import { leaseSchema } from "@/lib/services/lease-validation";
 
 export async function GET(req: NextRequest) {
   try {
@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
         },
         tenants: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
           },
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -56,64 +58,54 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
     console.log("Received lease data:", data);
 
-    // Add organizationId from session
-    const leaseData = {
-      ...data,
-      organizationId: session.user.organizationId,
-    };
+    // Validate the data using the Zod schema
+    const validatedData = leaseSchema.parse(data);
 
-    // Validate dates
-    const validation = await LeaseValidationService.validateLeaseDates(
-      leaseData.unitId,
-      new Date(leaseData.startDate),
-      new Date(leaseData.endDate)
-    );
-
-    if (!validation.isValid) {
-      return NextResponse.json({ error: validation.message }, { status: 400 });
-    }
-
-    // Determine initial status
-    const initialStatus =
-      new Date() < new Date(leaseData.startDate) ? "PENDING" : "ACTIVE";
-
-    const lease = await prisma.lease.create({
-      data: {
-        startDate: new Date(leaseData.startDate),
-        endDate: new Date(leaseData.endDate),
-        rentAmount: parseFloat(leaseData.rentAmount),
-        depositAmount: parseFloat(leaseData.depositAmount),
-        type: leaseData.type,
-        terms: leaseData.terms,
-        status: initialStatus,
-        unitId: leaseData.unitId,
-        organizationId: leaseData.organizationId,
-        tenants: {
-          connect: leaseData.tenantIds.map((id: string) => ({ id })),
-        },
-      },
-      include: {
-        unit: true,
-        tenants: true,
+    // Check for overlapping leases
+    const existingLeases = await prisma.lease.findMany({
+      where: {
+        unitId: validatedData.unitId,
+        OR: [
+          {
+            AND: [
+              { startDate: { lte: validatedData.endDate } },
+              { endDate: { gte: validatedData.startDate } },
+            ],
+          },
+        ],
+        status: { notIn: ["EXPIRED", "TERMINATED"] },
       },
     });
 
-    // If lease is active, update unit status
-    if (initialStatus === "ACTIVE") {
-      await prisma.unit.update({
-        where: { id: leaseData.unitId },
-        data: { status: "OCCUPIED" },
-      });
+    if (existingLeases.length > 0) {
+      return NextResponse.json(
+        { error: "Date range conflicts with existing leases" },
+        { status: 400 }
+      );
     }
+
+    const lease = await prisma.lease.create({
+      data: {
+        organizationId: session.user.organizationId,
+        unitId: validatedData.unitId,
+        startDate: validatedData.startDate,
+        endDate: validatedData.endDate,
+        rentAmount: validatedData.rentAmount,
+        depositAmount: validatedData.depositAmount,
+        type: validatedData.type,
+        terms: validatedData.terms,
+        status: "ACTIVE",
+        tenants: {
+          connect: validatedData.tenantIds.map((id) => ({ id })),
+        },
+      },
+    });
 
     return NextResponse.json(lease);
   } catch (error) {
     console.error("[LEASES_CREATE_ERROR]", error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to create lease",
-      },
+      { error: "Failed to create lease" },
       { status: 500 }
     );
   }

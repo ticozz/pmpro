@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/providers/sidebar-provider';
-import { useAuthContext } from '@/components/providers/auth-provider';
 import {
   ChevronLeft,
   LayoutDashboard,
@@ -14,9 +13,16 @@ import {
   FileText,
   Wrench,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { designSystem } from '@/lib/design-system';
+
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
 
 const routes = [
   {
@@ -47,10 +53,34 @@ const routes = [
 ];
 
 export function DashboardSidebar() {
-  const { user } = useAuthContext();
   const pathname = usePathname();
   const { isExpanded, toggleSidebar } = useSidebar();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [refresh, setRefresh] = useState(0);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/user/me');
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUser();
+  }, [refresh]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefresh(r => r + 1);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <aside>

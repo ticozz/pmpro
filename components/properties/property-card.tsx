@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Property } from '@prisma/client';
 import { MapPin, Building2, Home, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -80,7 +80,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
               designSystem.colors.text.muted
             )}>
               <User className="w-4 h-4 mr-2" />
-              <span>Manager: {property.manager.firstName}</span>
+              <span>Manager: {property.manager.name}</span>
             </div>
           )}
         </div>

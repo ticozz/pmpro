@@ -12,8 +12,8 @@ export interface PropertyWithAddress {
     country: string;
   } | null;
   manager: {
-    firstName: string;
-    lastName: string;
+    id: string;
+    name: string;
   } | null;
   _count?: {
     units: number;

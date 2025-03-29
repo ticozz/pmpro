@@ -1,5 +1,3 @@
-'use client';
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -15,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PropertyWithAddress } from "@/types/property";
 
 const PropertyType = {
   RESIDENTIAL: 'RESIDENTIAL',
@@ -25,22 +24,10 @@ const PropertyType = {
 type PropertyType = typeof PropertyType[keyof typeof PropertyType];
 
 interface PropertyEditFormClientProps {
-  property: {
-    id: string;
-    name: string;
-    type: string;
-    status: string;
-    address?: {
-      street: string;
-      city: string;
-      state: string;
-      zipCode: string;
-    } | null;
-    manager?: {
-      id: string;
-      name: string;
-    } | null;
-  };
+  property: PropertyWithAddress;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 const propertyTypes = Object.entries(PropertyType).map(([key, value]) => ({
@@ -64,7 +51,7 @@ const formSchema = z.object({
   }),
 });
 
-export function PropertyEditFormClient({ property }: PropertyEditFormClientProps) {
+export function PropertyEditFormClient({ property, isOpen, onOpenChange, onSuccess }: PropertyEditFormClientProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 

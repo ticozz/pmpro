@@ -79,7 +79,7 @@ export function PropertyList({ properties }: PropertyListProps) {
         method: 'DELETE',
       });
       if (response.ok) {
-        router.refresh();
+      router.refresh();
       }
     } catch (error) {
       console.error('Error deleting property:', error);

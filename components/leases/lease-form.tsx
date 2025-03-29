@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { SelectSearch } from "@/components/ui/select-search";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useRouter } from "next/navigation";
+import { DatePicker } from "../../components/ui/date-picker";
 
 console.log("LeaseForm component rendered");
 
@@ -105,8 +106,8 @@ export function LeaseForm({ initialData, isEditing, onSuccess }: LeaseFormProps)
       propertyId: initialData.unit.property.id,
       unitId: initialData.unit.id,
       tenantIds: initialData.tenants.map((t: any) => t.id),
-      startDate: parseISO(initialData.startDate),
-      endDate: parseISO(initialData.endDate),
+      startDate: new Date(initialData.startDate),
+      endDate: new Date(initialData.endDate),
       rentAmount: initialData.rentAmount,
       depositAmount: initialData.depositAmount,
       type: initialData.type,
@@ -118,8 +119,8 @@ export function LeaseForm({ initialData, isEditing, onSuccess }: LeaseFormProps)
       type: "FIXED",
       rentAmount: 0,
       depositAmount: 0,
-      startDate: undefined,
-      endDate: undefined,
+      startDate: new Date(),
+      endDate: new Date(),
       terms: "",
     },
   });
@@ -386,37 +387,14 @@ export function LeaseForm({ initialData, isEditing, onSuccess }: LeaseFormProps)
               control={form.control}
               name="startDate"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Start Date <span className="text-red-500">*</span></FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[280px] p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                        disabled={(date) => date < new Date()}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                <FormItem>
+                  <FormLabel>Start Date</FormLabel>
+                  <DatePicker
+                    date={(field.value as Date) || undefined}
+                    onSelect={(date: Date | undefined) => field.onChange(date)}
+                    disabled={isLoading}
+                    disableDate={false}
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -426,37 +404,14 @@ export function LeaseForm({ initialData, isEditing, onSuccess }: LeaseFormProps)
               control={form.control}
               name="endDate"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>End Date <span className="text-red-500">*</span></FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[280px] p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                        disabled={(date) => date < new Date()}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                <FormItem>
+                  <FormLabel>End Date</FormLabel>
+                  <DatePicker
+                    date={(field.value as Date) || undefined}
+                    onSelect={(date: Date | undefined) => field.onChange(date)}
+                    disabled={isLoading}
+                    disableDate={false}
+                  />
                   <FormMessage />
                 </FormItem>
               )}

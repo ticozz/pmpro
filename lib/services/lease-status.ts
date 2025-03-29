@@ -18,10 +18,11 @@ export class LeaseStatusService {
 
   static async updateLeaseStatuses(organizationId: string): Promise<void> {
     const now = new Date();
+    console.log("[LEASE_STATUS] Current time:", now);
 
     await prisma.$transaction(async (tx) => {
       // Update expired leases for this organization
-      await tx.lease.updateMany({
+      const expiredUpdates = await tx.lease.updateMany({
         where: {
           organizationId,
           endDate: { lt: now },
@@ -29,17 +30,46 @@ export class LeaseStatusService {
         },
         data: { status: "EXPIRED" },
       });
+      console.log(
+        "[LEASE_STATUS] Expired leases updated:",
+        expiredUpdates.count
+      );
 
-      // Update active leases for this organization
-      await tx.lease.updateMany({
+      // Update pending leases to active
+      const pendingLeases = await tx.lease.findMany({
         where: {
           organizationId,
           startDate: { lte: now },
-          endDate: { gte: now },
+          status: "PENDING",
+        },
+        select: {
+          id: true,
+          startDate: true,
+          organizationId: true,
+        },
+      });
+      console.log(
+        "[LEASE_STATUS] Found pending leases:",
+        pendingLeases.map((lease) => ({
+          ...lease,
+          startDate: new Date(lease.startDate),
+          startDateISO: lease.startDate,
+          isStartBeforeNow: new Date(lease.startDate) <= now,
+        }))
+      );
+
+      const pendingUpdates = await tx.lease.updateMany({
+        where: {
+          organizationId,
+          startDate: { lte: now },
           status: "PENDING",
         },
         data: { status: "ACTIVE" },
       });
+      console.log(
+        "[LEASE_STATUS] Pending leases updated:",
+        pendingUpdates.count
+      );
 
       // Get all active leases for this organization
       const activeLeases = await tx.lease.findMany({
@@ -47,16 +77,21 @@ export class LeaseStatusService {
           organizationId,
           status: "ACTIVE",
         },
-        select: { unitId: true },
+        select: {
+          unitId: true,
+        },
       });
 
-      const activeUnitIds = activeLeases.map((lease) => lease.unitId);
+      // Get unique unit IDs with active leases
+      const unitIdsWithActiveLeases = Array.from(
+        new Set(activeLeases.map((l) => l.unitId))
+      );
 
       // Update unit statuses for this organization
       await tx.unit.updateMany({
         where: {
           organizationId,
-          id: { in: activeUnitIds },
+          id: { in: unitIdsWithActiveLeases },
         },
         data: { status: "OCCUPIED" },
       });
@@ -64,8 +99,7 @@ export class LeaseStatusService {
       await tx.unit.updateMany({
         where: {
           organizationId,
-          id: { notIn: activeUnitIds },
-          status: "OCCUPIED",
+          id: { notIn: unitIdsWithActiveLeases },
         },
         data: { status: "VACANT" },
       });
